@@ -18,11 +18,11 @@ const BannerNotification = () => {
   if (isHidden) return null;
 
   return (
-    <div className="bg-white border-b z-40"> {/* z-40으로 낮은 우선순위 */}
-      <div className="mx-auto relative flex items-center justify-center py-2 px-4">
+    <div className="bg-gradient-to-r from-orange-100 to-pink-100 border-b border-orange-200 z-40"> {/* z-40으로 낮은 우선순위 */}
+      <div className="mx-auto relative flex items-center justify-center py-3 px-4">
         {/* BannerMsg */}
         <div className="text-sm sm:text-base text-center">
-          <a href="#" className="text-black hover:underline">
+          <a href="#" className="text-orange-800 hover:text-pink-800 transition-colors duration-200 font-medium">
             🎉 신규 회원 가입 시 10% 할인 쿠폰 증정! 🎉
           </a>
         </div>
@@ -33,7 +33,7 @@ const BannerNotification = () => {
             <input type="checkbox" id="close_today" className="mr-1" onChange={() => handleCloseBanner()} />
             오늘 하루 보지 않기
           </label>
-          <button className="text-gray-600 hover:text-black" onClick={handleCloseBanner}>✕</button>
+          <button className="text-gray-500 hover:text-orange-600 hover:scale-110 transition-all duration-200 p-1 rounded-full hover:bg-white/50" onClick={handleCloseBanner}>✕</button>
         </div>
       </div>
     </div>

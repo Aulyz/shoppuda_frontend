@@ -19,7 +19,7 @@ const HeroSlider = () => {
   ];
 
   return (
-    <section className="flex-grow flex w-full bg-transparent h-auto">
+    <section className="flex-grow flex w-full bg-gradient-to-br from-orange-50 via-white to-pink-50 h-auto">
       {/* Swiper 컴포넌트 사용 */}
       <Swiper
         modules={[Navigation, Pagination, Autoplay]} // 사용할 모듈들
@@ -38,9 +38,9 @@ const HeroSlider = () => {
       >
         {slides.map((slide) => (
           <SwiperSlide key={slide.id}>
-            <div className="w-full flex justify-center items-start bg-[#e0e0db] relative">
+            <div className="w-full flex justify-center items-start bg-gradient-to-br from-orange-100/30 via-white to-pink-100/30 relative">
               <div className="flex justify-center items-start w-full">
-                <img src={slide.image} alt={slide.alt} className="w-full h-auto object-contain drop-shadow-xl" />
+                <img src={slide.image} alt={slide.alt} className="w-full h-auto object-contain drop-shadow-2xl rounded-2xl" />
               </div>
             </div>
           </SwiperSlide>
@@ -55,12 +55,12 @@ const CouponSection = () => {
   // TODO: 사용자 이름을 상태나 props에서 가져오기
   const userName = "박민우";
   return (
-    <section className="w-full bg-gray-200 py-6 flex flex-col items-center mt-10 mb-10">
-      <h2 className="text-2xl font-bold text-black">{userName} 님을 위한 혜택</h2>
+    <section className="w-full soft-section py-12 flex flex-col items-center mt-10 mb-10">
+      <h2 className="soft-title text-center mb-4">{userName} 님을 위한 혜택</h2>
       <ul className="flex flex-wrap justify-center gap-6 w-full max-w-5xl mx-auto py-6">
         {/* 쿠폰 아이템 반복 (예시 3개) */}
         {[1, 2, 3].map((item) => (
-          <li key={item} className="inline-block list-none bg-white rounded-lg shadow w-[300px] min-h-[120px] relative flex">
+          <li key={item} className="inline-block list-none soft-card w-[300px] min-h-[120px] relative flex">
             <div className="flex flex-col justify-center px-4 py-5 w-[70%]">
               <span className="text-xs text-[#b47937] font-bold mb-1">SHOPPUDA</span>
               <span className="text-3xl font-bold text-[#222] mb-1">
@@ -72,9 +72,9 @@ const CouponSection = () => {
             </div>
             <div className="w-[1px] border-l border-dashed border-gray-300 my-2"></div>
             <div className="flex flex-col justify-center items-center w-[30%]">
-              <button className="flex flex-col items-center gap-1">
-                <i className="fa-solid fa-download bg-black rounded-full text-white p-3 text-lg"></i>
-                <span className="text-xs mt-1 text-black font-semibold">다운로드</span>
+              <button className="soft-button-outline flex flex-col items-center gap-2 px-4 py-2">
+                <i className="fa-solid fa-download text-lg"></i>
+                <span className="text-xs font-semibold">다운로드</span>
               </button>
             </div>
           </li>
@@ -95,7 +95,7 @@ const BestSellerSection = () => {
   }));
 
   return (
-    <section className="py-14">
+    <section className="soft-section">
       <div className="text-center mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-700 mb-2 tracking-wide">BEST SELLER</h2>
         <p className="text-gray-400 text-base">베스트 셀러를 만나보세요</p>
@@ -127,16 +127,16 @@ const BestSellerSection = () => {
 // 유튜브 비디오 섹션 컴포넌트
 const VideoSection = () => {
   return (
-    <section className="py-16 bg-white">
+    <section className="py-20 bg-gradient-to-r from-orange-50 via-white to-pink-50">
       <div className="max-w-screen-lg mx-auto flex flex-col items-center">
-        <h2 className="text-xl md:text-2xl font-bold text-center text-gray-800 mb-2">오직 쇼프다에서만 !</h2>
-        <p className="text-gray-400 text-base text-center mb-8">해외가 가까워지는 순간, 쇼프다를 위한 영상</p>
+        <h2 className="soft-title text-center mb-4">오직 쇼프다에서만 !</h2>
+        <p className="soft-subtitle text-center mb-12">해외가 가까워지는 순간, 쇼프다를 위한 영상</p>
         <div className="w-full max-w-3xl mx-auto">
           {/* TODO: video 태그의 src와 poster를 실제 경로로 변경 */}
           <video
             src="https://m-img.cafe24.com/images/ec/sde/video/luminous_1366x720.mp4"
             controls
-            className="w-full h-auto rounded-lg bg-black"
+            className="w-full h-auto rounded-2xl bg-black shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:scale-105"
             poster=""
           ></video>
         </div>
@@ -156,7 +156,7 @@ const NewItemsSection = () => {
   }));
 
   return (
-    <section className="py-14">
+    <section className="soft-section">
       <div className="max-w-screen-xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-xl md:text-2xl font-bold text-gray-700 mb-1">New</h2>

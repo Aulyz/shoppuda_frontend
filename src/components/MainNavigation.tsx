@@ -10,14 +10,14 @@ const MainNavigation = () => {
   ];
 
   return (
-    <nav className="max-w-screen-xl mx-auto">
-      <ul className="flex justify-center space-x-8 text-gray-700 text-base font-medium py-2">
+    <nav className="max-w-screen-xl mx-auto bg-white/50 backdrop-blur-sm rounded-full mx-4 shadow-lg">
+      <ul className="flex justify-center space-x-8 text-gray-600 text-base font-medium py-4">
         {navItems.map((item, index) => (
           <li key={index}>
             <Link 
               to={item.href} 
-              className={`hover:text-black transition-colors ${
-                item.active ? 'border-b-2 border-orange-400 text-black pb-2' : ''
+              className={`px-4 py-2 rounded-full transition-all duration-300 hover:scale-105 ${
+                item.active ? 'bg-gradient-to-r from-orange-400 to-pink-400 text-white shadow-lg' : 'hover:bg-orange-50 hover:text-orange-600'
               }`}
             >
               {item.name}
