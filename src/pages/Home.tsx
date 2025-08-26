@@ -1,37 +1,51 @@
-// src/pages/Home.tsx
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
+// Swiper의 React 컴포넌트와 필요한 스타일, 모듈 임포트
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css'; // 기본 Swiper 스타일
+import 'swiper/css/navigation'; // Navigation 모듈 스타일 (선택)
+import 'swiper/css/pagination'; // Pagination 모듈 스타일 (선택)
+import { Navigation, Pagination, Autoplay } from 'swiper/modules'; // 사용할 Swiper 모듈들
 
-// 이미지 슬라이더 컴포넌트 (Swiper.js 사용 예정)
+// 이미지 슬라이더 컴포넌트 (Swiper.js 사용)
 const HeroSlider = () => {
-  // TODO: Swiper.js를 사용하여 이미지 슬라이더 구현
-  // 현재는 단일 이미지로 대체
+  // 슬라이드에 사용할 이미지 목록 (실제 이미지 경로로 교체 필요)
+  const slides = [
+    { id: 1, image: '/Images/b2.jpg', alt: 'Banner 1' },
+    { id: 2, image: '/Images/banner2.jpg', alt: 'Banner 2' }, // 예시 이미지
+    { id: 3, image: '/Images/banner3.jpg', alt: 'Banner 3' }, // 예시 이미지
+    //이미지 추가 가능
+  ];
+
   return (
     <section className="flex-grow flex w-full bg-transparent h-auto">
-      <div className="w-full flex justify-center items-start bg-[#e0e0db] relative">
-        <div className="flex justify-center items-start w-full">
-          <img src="/Images/b2.jpg" alt="Banner1" className="w-full h-auto object-contain drop-shadow-xl" />
-        </div>
-        {/* 슬라이더 페이저 (예시) */}
-        <div className="absolute left-1/2 bottom-4 -translate-x-1/2 flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-black opacity-80"></span>
-          <span className="w-2 h-2 rounded-full bg-gray-400 opacity-50"></span>
-        </div>
-      </div>
-      {/* Navigation Buttons (예시) */}
-      <button className="absolute top-1/2 left-4 -translate-y-1/2 bg-black bg-opacity-30 hover:bg-opacity-60 rounded-full w-8 h-8 flex items-center justify-center z-50"
-        aria-label="Previous slide" >
-        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7 7-7-7" />
-        </svg>
-      </button>
-      <button className="absolute top-1/2 right-4 -translate-y-1/2 bg-black bg-opacity-30 hover:bg-opacity-60 rounded-full w-8 h-8 flex items-center justify-center z-50"
-        aria-label="Next slide" >
-        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+      {/* Swiper 컴포넌트 사용 */}
+      <Swiper
+        modules={[Navigation, Pagination, Autoplay]} // 사용할 모듈들
+        spaceBetween={0} // 슬라이드 간 간격
+        slidesPerView={1} // 한 번에 보여줄 슬라이드 수
+        loop={true} // 무한 루프
+        autoplay={{ // 자동 재생 설정 (선택)
+          delay: 5000, // 5초마다 슬라이드 변경
+          disableOnInteraction: false, // 사용자 상호작용 후에도 자동 재생 계속
+        }}
+        navigation={true} // Navigation 화살표 표시 (선택)
+        pagination={{ // Pagination 표시 (선택)
+          clickable: true, // 페이지네이션 버튼 클릭 가능
+        }}
+        className="w-full" // Swiper 컨테이너 스타일
+      >
+        {slides.map((slide) => (
+          <SwiperSlide key={slide.id}>
+            <div className="w-full flex justify-center items-start bg-[#e0e0db] relative">
+              <div className="flex justify-center items-start w-full">
+                <img src={slide.image} alt={slide.alt} className="w-full h-auto object-contain drop-shadow-xl" />
+              </div>
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
     </section>
   );
 };
