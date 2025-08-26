@@ -1,11 +1,32 @@
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import BannerNotification from './BannerNotification';
 import TopMenuBar from './TopMenuBar';
 import MainNavigation from './MainNavigation';
 
 const Header2 = () => {
+  const location = useLocation();
+  const [showGif, setShowGif] = useState(true);
+
+  // 홈페이지인지 확인
+  const isHomePage = location.pathname === '/';
+
+  useEffect(() => {
+    // 페이지 로드 시 GIF 표시
+    setShowGif(true);
+    
+    // 1.5초 후 PNG로 전환
+    const timer = setTimeout(() => {
+      setShowGif(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const logoSrc = showGif ? '/images/logo_shoppuda.gif' : '/images/logo_demo.png';
+
   return (
-    <div className="sticky top-0 z-50 bg-white border-b">
+    <div className={isHomePage ? "sticky top-0 z-50 bg-white border-b" : "relative bg-white border-b"}>
       {/* BannerNotification - 최상단에 표시 */}
       <BannerNotification />
 
@@ -17,15 +38,22 @@ const Header2 = () => {
         <div className="flex-1"></div>
 
         {/* Logo + Home Link */}
-        <Link to="/" className="flex flex-col items-center flex-shrink-0 cursor-pointer">
-          <span className="text-3xl tracking-wide" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600 }}>
-            SHOPPUDA
-          </span>
-          <div className="flex mt-1 space-x-1 font-semibold bg-orange-200" style={{ fontFamily: "'Playfair Display', serif" }}>
-            <span className="text-orange-900 rounded px-2 py-0.5">해외 쇼핑, </span>
-            <span className="text-orange-900 rounded px-2 py-0.5">클릭 한 번으로</span>
-          </div>
-        </Link>
+        <div className="flex flex-col items-center flex-shrink-0">
+          <Link to="/" className="cursor-pointer">
+            <img 
+              src={logoSrc} 
+              alt="SHOPPUDA Logo" 
+              className="h-20 w-auto transition-opacity duration-300"
+            />
+          </Link>
+          <Link to="/" className="cursor-pointer mt-1">
+            <div className="flex mt-1 space-x-1 font-semibold bg-orange-200 rounded-full px-3 py-1 shadow-sm text-sm" 
+                 style={{ fontFamily: "'Playfair Display', serif" }}>
+              <span className="text-orange-900">해외 쇼핑, </span>
+              <span className="text-orange-900">클릭 한 번으로</span>
+            </div>
+          </Link>
+        </div>
 
         {/* SideMenu */}
         <div className="flex-1 flex justify-end items-center space-x-6 text-gray-700">
@@ -83,7 +111,7 @@ const Header2 = () => {
       </div>
 
       {/* Main Navigation - 컴포넌트 사용 */}
-      <MainNavigation /> {/* 이 코드는 이제 정상 작동 */}
+      <MainNavigation />
     </div>
   );
 };
