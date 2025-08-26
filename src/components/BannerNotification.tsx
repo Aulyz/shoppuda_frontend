@@ -1,16 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const BannerNotification = () => {
   const [isHidden, setIsHidden] = useState(false);
 
+  useEffect(() => {
+    const bannerHidden = localStorage.getItem('bannerHidden');
+    if (bannerHidden === 'true') {
+      setIsHidden(true);
+    }
+  }, []);
+
   const handleCloseBanner = () => {
-    // 로컬 스토리지에 저장하여 오늘 하루 동안 다시 안 보이도록 함
     localStorage.setItem('bannerHidden', 'true');
     setIsHidden(true);
   };
 
-  // 로컬 스토리지에 저장된 값 확인하여 배너 표시 여부 결정
-  if (localStorage.getItem('bannerHidden') === 'true') return null;
+  if (isHidden) return null;
 
   return (
     <div className="bg-white border-b z-40"> {/* z-40으로 낮은 우선순위 */}

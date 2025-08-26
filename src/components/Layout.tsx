@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+import { useLocation } from 'react-router-dom';
 import Header2 from './Header2';
 import Footer from './Footer';
 
@@ -9,17 +8,17 @@ interface LayoutProps {
 }
 
 function Layout({ children }: LayoutProps) {
-  const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const location = useLocation();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  // 홈페이지인지 확인
+  const isHomePage = location.pathname === '/';
 
   return (
     <div className="min-h-screen flex flex-col font-[Pretendard]">
-      <Header2 /> {/* Header1 제거 */}
+      {/* 조건부 sticky */}
+      <div className={isHomePage ? "sticky top-0 z-50 bg-white border-b" : "bg-white border-b"}>
+        <Header2 />
+      </div>
       
       <main className="flex-1">
         {children}

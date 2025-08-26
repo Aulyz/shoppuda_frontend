@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .dropdown-menu {
+    @apply absolute right-0 mt-1 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 transition-all duration-200 ease-in-out transform;
+  }
+  
+  .dropdown-item {
+    @apply block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors;
+  }
+  
+  .nav-link {
+    @apply hover:text-black transition-colors;
+  }
+  
+  .container-max {
+    @apply max-w-screen-xl mx-auto px-4;
+  }
+  
+  .brand-font {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
