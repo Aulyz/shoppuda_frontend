@@ -6,6 +6,16 @@ export interface User {
   last_name?: string
 }
 
+export interface LoginData {
+  username: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  user: User; // 로그인한 사용자의 전체 정보
+  token: string; // 인증 토큰
+}
+
 export interface Product {
   id: number
   name: string

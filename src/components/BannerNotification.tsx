@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const Header1 = () => {
+const BannerNotification = () => {
   const [isHidden, setIsHidden] = useState(false);
 
   const handleCloseBanner = () => {
@@ -13,7 +13,7 @@ const Header1 = () => {
   if (localStorage.getItem('bannerHidden') === 'true') return null;
 
   return (
-    <div className="bg-white border-b z-50"> {/* z-50으로 높은 우선순위 */}
+    <div className="bg-white border-b z-40"> {/* z-40으로 낮은 우선순위 */}
       <div className="mx-auto relative flex items-center justify-center py-2 px-4">
         {/* BannerMsg */}
         <div className="text-sm sm:text-base text-center">
@@ -35,4 +35,4 @@ const Header1 = () => {
   );
 };
 
-export default Header1;
+export default BannerNotification;

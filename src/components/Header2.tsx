@@ -1,19 +1,31 @@
 import { Link } from 'react-router-dom';
-import MainNavigation from './MainNavigation'; // MainNavigation Component import
+import BannerNotification from './BannerNotification';
+import TopMenuBar from './TopMenuBar';
+import MainNavigation from './MainNavigation';
 
 const Header2 = () => {
   return (
     <div className="sticky top-0 z-50 bg-white border-b">
+      {/* BannerNotification - 최상단에 표시 */}
+      <BannerNotification />
+
+      {/* TopMenuBar - 배너 아래에 표시 */}
+      <TopMenuBar />
+
+      {/* 로고, 검색, 위시리스트, 장바구니, 프로필 메뉴, 네비게이션 */}
       <div className="max-w-screen-xl mx-auto flex items-center justify-between py-2 px-4">
         <div className="flex-1"></div>
-        {/* Logo */}
-        <div className="flex flex-col items-center flex-shrink-0">
-          <span className="text-3xl tracking-wide" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600 }} >SHOPPUDA</span>
-          <div className="flex mt-1 space-x-1 font-semibold bg-orange-200" style={{ fontFamily: "'Playfair Display', serif" }} >
+
+        {/* Logo + Home Link */}
+        <Link to="/" className="flex flex-col items-center flex-shrink-0 cursor-pointer">
+          <span className="text-3xl tracking-wide" style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600 }}>
+            SHOPPUDA
+          </span>
+          <div className="flex mt-1 space-x-1 font-semibold bg-orange-200" style={{ fontFamily: "'Playfair Display', serif" }}>
             <span className="text-orange-900 rounded px-2 py-0.5">해외 쇼핑, </span>
             <span className="text-orange-900 rounded px-2 py-0.5">클릭 한 번으로</span>
           </div>
-        </div>
+        </Link>
 
         {/* SideMenu */}
         <div className="flex-1 flex justify-end items-center space-x-6 text-gray-700">
@@ -69,8 +81,9 @@ const Header2 = () => {
           </div>
         </div>
       </div>
+
       {/* Main Navigation - 컴포넌트 사용 */}
-      <MainNavigation />
+      <MainNavigation /> {/* 이 코드는 이제 정상 작동 */}
     </div>
   );
 };
