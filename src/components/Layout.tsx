@@ -39,7 +39,7 @@ function Layout({ children }: LayoutProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
-            <ul className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 hidden group-hover:block">
+            <ul className="absolute right-0 z-10 mt-0 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 hidden group-hover:block">
               <li><a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">공지사항</a></li>
               <li><a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">상품 사용후기</a></li>
               <li><a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">상품 Q&amp;A</a></li>
