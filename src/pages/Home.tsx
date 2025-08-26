@@ -1,93 +1,220 @@
-import { Link } from 'react-router-dom'
-import { useQuery } from 'react-query'
-import { api } from '../services/api'
+// src/pages/Home.tsx
+import { Link } from 'react-router-dom';
+import { useQuery } from 'react-query';
+import { api } from '../services/api';
 
-function Home() {
-  const { data: featuredProducts, isLoading } = useQuery(
-    'featuredProducts',
-    () => api.getProducts({ featured: true, limit: 8 })
-  )
+// 이미지 슬라이더 컴포넌트 (Swiper.js 사용 예정)
+const HeroSlider = () => {
+  // TODO: Swiper.js를 사용하여 이미지 슬라이더 구현
+  // 현재는 단일 이미지로 대체
+  return (
+    <section className="flex-grow flex w-full bg-transparent h-auto">
+      <div className="w-full flex justify-center items-start bg-[#e0e0db] relative">
+        <div className="flex justify-center items-start w-full">
+          <img src="/Images/b2.jpg" alt="Banner1" className="w-full h-auto object-contain drop-shadow-xl" />
+        </div>
+        {/* 슬라이더 페이저 (예시) */}
+        <div className="absolute left-1/2 bottom-4 -translate-x-1/2 flex items-center space-x-2">
+          <span className="w-2 h-2 rounded-full bg-black opacity-80"></span>
+          <span className="w-2 h-2 rounded-full bg-gray-400 opacity-50"></span>
+        </div>
+      </div>
+      {/* Navigation Buttons (예시) */}
+      <button className="absolute top-1/2 left-4 -translate-y-1/2 bg-black bg-opacity-30 hover:bg-opacity-60 rounded-full w-8 h-8 flex items-center justify-center z-50"
+        aria-label="Previous slide" >
+        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7 7-7-7" />
+        </svg>
+      </button>
+      <button className="absolute top-1/2 right-4 -translate-y-1/2 bg-black bg-opacity-30 hover:bg-opacity-60 rounded-full w-8 h-8 flex items-center justify-center z-50"
+        aria-label="Next slide" >
+        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </section>
+  );
+};
+
+// 쿠폰 섹션 컴포넌트
+const CouponSection = () => {
+  // TODO: 사용자 이름을 상태나 props에서 가져오기
+  const userName = "박민우";
+  return (
+    <section className="w-full bg-gray-200 py-6 flex flex-col items-center mt-10 mb-10">
+      <h2 className="text-2xl font-bold text-black">{userName} 님을 위한 혜택</h2>
+      <ul className="flex flex-wrap justify-center gap-6 w-full max-w-5xl mx-auto py-6">
+        {/* 쿠폰 아이템 반복 (예시 3개) */}
+        {[1, 2, 3].map((item) => (
+          <li key={item} className="inline-block list-none bg-white rounded-lg shadow w-[300px] min-h-[120px] relative flex">
+            <div className="flex flex-col justify-center px-4 py-5 w-[70%]">
+              <span className="text-xs text-[#b47937] font-bold mb-1">SHOPPUDA</span>
+              <span className="text-3xl font-bold text-[#222] mb-1">
+                1,000<span className="text-xl font-normal">원</span>
+              </span>
+              <span className="text-xs text-gray-500 block truncate">
+                VIP 단골고객 할인쿠폰
+              </span>
+            </div>
+            <div className="w-[1px] border-l border-dashed border-gray-300 my-2"></div>
+            <div className="flex flex-col justify-center items-center w-[30%]">
+              <button className="flex flex-col items-center gap-1">
+                <i className="fa-solid fa-download bg-black rounded-full text-white p-3 text-lg"></i>
+                <span className="text-xs mt-1 text-black font-semibold">다운로드</span>
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+};
+
+// 베스트 셀러 섹션 컴포넌트
+const BestSellerSection = () => {
+  // TODO: 실제 베스트 셀러 데이터를 API에서 가져오기
+  const mockProducts = Array(5).fill(null).map((_, i) => ({
+    id: i + 1,
+    name: "클라리엘 딥클린 세탁세제",
+    price: 12000,
+    image: "//ecimg.cafe24img.com/pg2160b96498953088/seoa0413/web/product/medium/20250819/dc52e36d4287a69cc69ae0dd5b6e9117.jpg"
+  }));
 
   return (
-    <div>
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-primary-600 to-primary-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Welcome to Shopuda
-            </h1>
-            <p className="text-xl mb-8">온라인 쇼핑의 새로운 경험을 만나보세요</p>
-            <Link
-              to="/products"
-              className="inline-block bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition"
-            >
-              쇼핑 시작하기
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">추천 상품</h2>
-          
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-gray-200 h-64 rounded-lg mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+    <section className="py-14">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-700 mb-2 tracking-wide">BEST SELLER</h2>
+        <p className="text-gray-400 text-base">베스트 셀러를 만나보세요</p>
+      </div>
+      <div className="max-w-screen-xl mx-auto px-4 py-8">
+        <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {mockProducts.map((product) => (
+            <li key={product.id} className="w-full max-w-xs flex flex-col items-center">
+              <div className="relative w-full aspect-square mb-4">
+                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex space-x-2">
+                  <button className="bg-white/70 text-gray-700 text-xs font-semibold px-4 py-1 rounded shadow">WISH</button>
+                  <button className="bg-white/70 text-gray-700 text-xs font-semibold px-4 py-1 rounded shadow">ADD</button>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts?.results?.map((product: any) => (
-                <Link
-                  key={product.id}
-                  to={`/products/${product.id}`}
-                  className="group"
-                >
-                  <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200">
-                    <img
-                      src={product.image || '/placeholder.png'}
-                      alt={product.name}
-                      className="h-64 w-full object-cover object-center group-hover:opacity-75 transition"
-                    />
-                  </div>
-                  <h3 className="mt-4 text-sm text-gray-700">{product.name}</h3>
-                  <p className="mt-1 text-lg font-medium text-gray-900">
-                    ₩{product.price?.toLocaleString()}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+                <div className="absolute left-2 bottom-2 text-xs text-white/80 bg-black/40 px-2 py-[2px] rounded">실제 판매되지 않는 상품입니다</div>
+              </div>
+              <div className="w-full text-left">
+                <div className="text-gray-900 text-base mb-1">{product.name}</div>
+                <div className="font-bold text-black text-lg">{product.price.toLocaleString()}원</div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+};
 
-      {/* Categories */}
-      <section className="py-16 bg-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">카테고리</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {['패션', '전자제품', '홈&리빙', '뷰티', '스포츠', '도서', '식품', '완구'].map((category) => (
-              <Link
-                key={category}
-                to={`/products?category=${category}`}
-                className="bg-white p-6 rounded-lg text-center hover:shadow-lg transition"
-              >
-                <h3 className="font-semibold text-gray-800">{category}</h3>
-              </Link>
-            ))}
-          </div>
+// 유튜브 비디오 섹션 컴포넌트
+const VideoSection = () => {
+  return (
+    <section className="py-16 bg-white">
+      <div className="max-w-screen-lg mx-auto flex flex-col items-center">
+        <h2 className="text-xl md:text-2xl font-bold text-center text-gray-800 mb-2">오직 쇼프다에서만 !</h2>
+        <p className="text-gray-400 text-base text-center mb-8">해외가 가까워지는 순간, 쇼프다를 위한 영상</p>
+        <div className="w-full max-w-3xl mx-auto">
+          {/* TODO: video 태그의 src와 poster를 실제 경로로 변경 */}
+          <video
+            src="https://m-img.cafe24.com/images/ec/sde/video/luminous_1366x720.mp4"
+            controls
+            className="w-full h-auto rounded-lg bg-black"
+            poster=""
+          ></video>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+};
+
+// 신상품 섹션 컴포넌트 (탭 네비게이션 포함)
+const NewItemsSection = () => {
+  // TODO: 실제 신상품 데이터와 탭 로직 구현
+  const mockNewProducts = Array(5).fill(null).map((_, i) => ({
+    id: i + 1,
+    name: "클라리엘 딥클린 세탁세제",
+    price: 12000,
+    image: "//ecimg.cafe24img.com/pg2160b96498953088/seoa0413/web/product/medium/20250819/dc52e36d4287a69cc69ae0dd5b6e9117.jpg"
+  }));
+
+  return (
+    <section className="py-14">
+      <div className="max-w-screen-xl mx-auto">
+        <div className="text-center mb-10">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-700 mb-1">New</h2>
+          <p className="text-gray-400 text-sm">쇼프다의 새로운 상품을 만나보세요</p>
+        </div>
+        {/* 탭 네비게이션 (간단한 예시, 실제 구현 시 상태 관리 필요) */}
+        <ul className="flex space-x-6 border-b border-gray-200 items-center flex justify-center mb-8" role="tablist">
+          {['새로운 카테고리 1', '새로운 카테고리 2', '새로운 카테고리 3', '새로운 카테고리 4'].map((category, index) => (
+            <li key={index} role="presentation">
+              <button
+                type="button"
+                className={`pb-2 border-b-2 ${index === 0 ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-900'} font-semibold focus:outline-none`}
+                // onClick={() => setActiveTab(index)} // 상태 변경 로직 필요
+                role="tab"
+                aria-selected={index === 0}
+                // aria-controls={`tabContent${index + 1}`}
+                // id={`tab${index + 1}`}
+              >
+                {category}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="max-w-screen-xl mx-auto px-4 py-8">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-12">
+            {mockNewProducts.map((product) => (
+              <li key={product.id} className="w-full max-w-xs flex flex-col items-center">
+                <div className="relative w-full aspect-square overflow-hidden mb-4">
+                  <Link to="#" className="block">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  </Link>
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex space-x-2 pointer-events-none">
+                    <button className="bg-white/70 text-gray-700 text-xs font-semibold px-3 py-1 rounded shadow pointer-events-auto">WISH</button>
+                    <button className="bg-white/70 text-gray-700 text-xs font-semibold px-3 py-1 rounded shadow pointer-events-auto">ADD</button>
+                  </div>
+                  <div className="absolute left-2 bottom-2 text-[10px] text-white bg-black bg-opacity-40 px-1 rounded select-none">
+                    실제 판매되지 않는 상품입니다
+                  </div>
+                </div>
+                <div className="w-full text-left">
+                  <Link to="#" className="block text-gray-900 text-sm mb-1">{product.name}</Link>
+                  <p className="font-bold text-black text-base">{product.price.toLocaleString()}원</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// 메인 Home 컴포넌트
+function Home() {
+  // 기존의 추천 상품 로직은 유지하거나 제거 가능
+  // const { data: featuredProducts, isLoading } = useQuery(...)
+
+  return (
+    <div className="bg-[#eeeeee]"> {/* body 태그의 클래스를 여기에 적용 */}
+      <HeroSlider />
+      <CouponSection />
+      <BestSellerSection />
+      <VideoSection />
+      <NewItemsSection />
+      {/* 기존의 featuredProducts, Categories 섹션은 제거하거나 수정 */}
     </div>
-  )
+  );
 }
 
-export default Home
+export default Home;

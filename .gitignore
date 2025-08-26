@@ -11,6 +11,9 @@
 # production
 /build
 
+# midea
+/images
+
 # misc
 .DS_Store
 .env.local
