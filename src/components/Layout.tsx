@@ -12,6 +12,8 @@ function Layout({ children }: LayoutProps) {
 
   // 홈페이지인지 확인
   const isHomePage = location.pathname === '/';
+  // 로그인/회원가입 페이지인지 확인
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
 
   return (
     <div className="min-h-screen flex flex-col font-[Pretendard]">
@@ -24,7 +26,8 @@ function Layout({ children }: LayoutProps) {
         {children}
       </main>
 
-      <Footer />
+      {/* 로그인/회원가입 페이지에서는 Footer 숨김 */}
+      {!isAuthPage && <Footer />}
     </div>
   );
 }
