@@ -10,7 +10,7 @@ function SignUp() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -68,7 +68,7 @@ function SignUp() {
             <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-2">
               회원가입
             </h2>
-            <p className="text-gray-500 text-sm">쇼푸다에 오신 것을 환영합니다</p>
+            <p className="text-gray-500 text-sm">쇼프다에 오신 것을 환영합니다</p>
           </div>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>

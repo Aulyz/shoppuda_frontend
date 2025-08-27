@@ -99,7 +99,7 @@ const BestSellerSection = () => {
     <section className="soft-section">
       <div className="text-center mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-700 mb-2 tracking-wide">BEST SELLER</h2>
-        <p className="text-gray-400 text-base">쇼푸다 고객님들께 인정받은 추천 상품 !</p>
+        <p className="text-gray-400 text-base">쇼프다 고객님들께 인정받은 추천 상품 !</p>
       </div>
       <div className="max-w-screen-xl mx-auto px-4 py-8">
         <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-8">
