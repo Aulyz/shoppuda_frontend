@@ -84,10 +84,9 @@ const CouponSection = () => {
   );
 };
 
-// 베스트 셀러 섹션 컴포넌트 - 수정됨
+// 베스트 셀러 섹션 컴포넌트 - 비율 및 크기 신상품 섹션과 통일
 const BestSellerSection = () => {
   // TODO: 실제 베스트 셀러 데이터를 API에서 가져오기
-  // 상품 수를 4개로 제한
   const mockProducts = Array(5).fill(null).map((_, i) => ({
     id: i + 1,
     name: "Test용 문구 상품입니다",
@@ -102,19 +101,24 @@ const BestSellerSection = () => {
         <p className="text-gray-400 text-base">쇼프다 고객님들께 인정받은 추천 상품 !</p>
       </div>
       <div className="max-w-screen-xl mx-auto px-4 py-8">
-        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-8">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-10 gap-y-16">
           {mockProducts.map((product) => (
-            <li key={product.id} className="w-full max-w-xs flex flex-col items-center">
-              <div className="relative w-full aspect-square mb-4">
+            <li
+              key={product.id}
+              className="w-full max-w-[270px] flex flex-col items-center shadow-xl rounded-2xl bg-white/90 transition-transform duration-200 hover:scale-105"
+            >
+              <div className="relative w-full aspect-square overflow-hidden mb-4 rounded-t-2xl">
                 <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex space-x-2">
-                  <button className="bg-white/70 text-gray-700 text-xs font-semibold px-4 py-1 rounded shadow">WISH</button>
-                  <button className="bg-white/70 text-gray-700 text-xs font-semibold px-4 py-1 rounded shadow">ADD</button>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex space-x-2 pointer-events-none">
+                  <button className="bg-white/70 text-gray-700 text-xs font-semibold px-3 py-1 rounded shadow pointer-events-auto">WISH</button>
+                  <button className="bg-white/70 text-gray-700 text-xs font-semibold px-3 py-1 rounded shadow pointer-events-auto">ADD</button>
                 </div>
-                <div className="absolute left-2 bottom-2 text-xs text-white/80 bg-black/40 px-2 py-[2px] rounded">실제 판매되지 않는 상품입니다</div>
+                <div className="absolute left-2 bottom-2 text-[10px] text-white bg-black bg-opacity-40 px-1 rounded select-none">
+                  실제 판매되지 않는 상품입니다
+                </div>
               </div>
-              <div className="w-full text-left">
-                <div className="text-gray-900 text-base mb-1">{product.name}</div>
+              <div className="w-full text-left px-3 pb-4">
+                <div className="text-gray-900 text-base font-semibold mb-1">{product.name}</div>
                 <div className="font-bold text-black text-lg">{product.price.toLocaleString()}원</div>
               </div>
             </li>
