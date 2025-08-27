@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import BannerNotification from './BannerNotification';
 import MainNavigation from './MainNavigation';
-// import type { DropdownType } from '../types';
 
 const Header2 = () => {
   const location = useLocation();
@@ -18,8 +17,6 @@ const Header2 = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const logoSrc = showGif ? '/images/logo_shoppuda.gif' : '/images/logo_demo.png';
-  
   const handleDropdownToggle = (type: string, isOpen: boolean) => {
     if (type === 'customer') {
       setIsCustomerServiceOpen(isOpen);
@@ -79,9 +76,9 @@ const Header2 = () => {
         <div className="flex flex-col items-center flex-shrink-0">
           <Link to="/" className="cursor-pointer">
             <img 
-              src={logoSrc} 
+              src={showGif ? "/Images/Logo_Shoppuda.gif" : "/Images/Shoppuda_logo.png"} 
               alt="SHOPPUDA Logo" 
-              className="h-20 w-auto transition-opacity duration-300"
+              className="h-20 w-auto"
             />
           </Link>
           <Link to="/" className="cursor-pointer mt-1">

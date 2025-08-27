@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useQuery } from 'react-query';
-import { api } from '../services/api';
+//import { useQuery } from 'react-query';
+//import { api } from '../services/api';
 // Swiper의 React 컴포넌트와 필요한 스타일, 모듈 임포트
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css'; // 기본 Swiper 스타일
@@ -16,7 +16,7 @@ const HeroSlider = () => {
     { id: 2, image: '/Images/banner2.jpg', alt: 'Banner 2' }, // 예시 이미지
     { id: 3, image: '/Images/banner3.jpg', alt: 'Banner 3' }, // 예시 이미지
     //이미지 추가 가능
-  ];
+  ];  
 
   return (
     <section className="flex-grow flex w-full bg-gradient-to-br from-orange-50 via-white to-pink-50 h-auto">
@@ -84,12 +84,13 @@ const CouponSection = () => {
   );
 };
 
-// 베스트 셀러 섹션 컴포넌트
+// 베스트 셀러 섹션 컴포넌트 - 수정됨
 const BestSellerSection = () => {
   // TODO: 실제 베스트 셀러 데이터를 API에서 가져오기
+  // 상품 수를 4개로 제한
   const mockProducts = Array(5).fill(null).map((_, i) => ({
     id: i + 1,
-    name: "클라리엘 딥클린 세탁세제",
+    name: "Test용 문구 상품입니다",
     price: 12000,
     image: "//ecimg.cafe24img.com/pg2160b96498953088/seoa0413/web/product/medium/20250819/dc52e36d4287a69cc69ae0dd5b6e9117.jpg"
   }));
@@ -98,10 +99,10 @@ const BestSellerSection = () => {
     <section className="soft-section">
       <div className="text-center mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-700 mb-2 tracking-wide">BEST SELLER</h2>
-        <p className="text-gray-400 text-base">베스트 셀러를 만나보세요</p>
+        <p className="text-gray-400 text-base">쇼푸다 고객님들께 인정받은 추천 상품 !</p>
       </div>
       <div className="max-w-screen-xl mx-auto px-4 py-8">
-        <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-8">
           {mockProducts.map((product) => (
             <li key={product.id} className="w-full max-w-xs flex flex-col items-center">
               <div className="relative w-full aspect-square mb-4">
@@ -134,7 +135,7 @@ const VideoSection = () => {
         <div className="w-full max-w-3xl mx-auto">
           {/* TODO: video 태그의 src와 poster를 실제 경로로 변경 */}
           <video
-            src="https://m-img.cafe24.com/images/ec/sde/video/luminous_1366x720.mp4"
+            src="https://m-img.cafe24.com/images/ec/sde/video/luminous_1366x720.mp4  "
             controls
             className="w-full h-auto rounded-2xl bg-black shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:scale-105"
             poster=""

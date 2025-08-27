@@ -1,9 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const MainNavigation = () => {
+  const location = useLocation();
+  
   const navItems = [
     { name: 'All', href: '/products' },
-    { name: 'Best', href: '/products/best', active: true },
+    { name: 'Home', href: '/'},
+    { name: 'Best', href: '/products/best'},
     { name: 'New', href: '/products/new' },
     { name: 'Sale', href: '/products/sale' },
     { name: 'Q&A', href: '/qna' }
@@ -15,9 +18,9 @@ const MainNavigation = () => {
         {navItems.map((item, index) => (
           <li key={index}>
             <Link 
-              to={item.href} 
+              to={item.href!} 
               className={`px-4 py-2 rounded-full transition-all duration-300 hover:scale-105 ${
-                item.active ? 'bg-gradient-to-r from-orange-400 to-pink-400 text-white shadow-lg' : 'hover:bg-orange-50 hover:text-orange-600'
+                location.pathname === item.href ? 'bg-gradient-to-r from-orange-400 to-pink-400 text-white shadow-lg' : 'hover:bg-orange-50 hover:text-orange-600'
               }`}
             >
               {item.name}
