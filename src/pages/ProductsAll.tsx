@@ -4,7 +4,7 @@ import { useQuery } from 'react-query'
 import { api } from '../services/api'
 import { FunnelIcon } from '@heroicons/react/24/outline'
 
-function Products() {
+function ProductsAll() {
   // URL 파라미터 관리
   const [searchParams, setSearchParams] = useSearchParams()
   const [showFilters, setShowFilters] = useState(false)
@@ -248,4 +248,4 @@ function Products() {
   )
 }
 
-export default Products
+export default ProductsAll
