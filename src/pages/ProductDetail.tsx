@@ -15,9 +15,16 @@ function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
 
+  // ID 유효성 검사
+  const productId = Number(id)
+  const isValidId = !!(id && !isNaN(productId) && productId > 0)
+
   const { data: product, isLoading } = useQuery(
     ['product', id],
-    () => api.getProduct(Number(id))
+    () => api.getProduct(productId),
+    {
+      enabled: isValidId
+    }
   )
 
   const addToCartMutation = useMutation(
@@ -33,7 +40,7 @@ function ProductDetail() {
   )
 
   const toggleWishlistMutation = useMutation(
-    () => api.toggleWishlist(Number(id)),
+    () => api.toggleWishlist(productId),
     {
       onSuccess: () => {
         toast.success('위시리스트가 업데이트되었습니다!')
@@ -49,7 +56,7 @@ function ProductDetail() {
     }
 
     addToCartMutation.mutate({
-      product_id: Number(id),
+      product_id: productId,
       quantity,
       size: selectedSize,
       color: selectedColor
@@ -64,6 +71,24 @@ function ProductDetail() {
     }
 
     toggleWishlistMutation.mutate()
+  }
+
+  // 유효하지 않은 ID 처리
+  if (!isValidId) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">잘못된 상품 페이지</h1>
+          <p className="text-gray-600 mb-6">요청하신 상품을 찾을 수 없습니다.</p>
+          <button
+            onClick={() => navigate('/products')}
+            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition"
+          >
+            상품 목록으로 이동
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (isLoading) {
