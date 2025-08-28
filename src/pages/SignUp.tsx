@@ -28,6 +28,7 @@ function SignUp() {
   // 아이디 중복 확인 상태
   const [isIdChecked, setIsIdChecked] = useState(false);
   const [idCheckResult, setIdCheckResult] = useState('');
+  const [showValidationError, setShowValidationError] = useState(false);
 
   // 전체 동의 체크
   const handleAllAgree = () => {
@@ -71,20 +72,28 @@ function SignUp() {
     if (!formData.username) {
       setIdCheckResult('아이디를 입력해주세요.');
       setIsIdChecked(false);
+      setShowValidationError(true);
       return;
     }
 
+    // 여러 조건을 체크하여 구체적인 문제점 표시
+    const errors: string[] = [];
     if (formData.username.length < 3) {
-      setIdCheckResult('아이디는 3자 이상이어야 합니다.');
+      errors.push('3자 이상 입력 필요');
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      errors.push('영문, 숫자, 언더스코어(_)만 사용 가능');
+    }
+
+    if (errors.length > 0) {
+      setIdCheckResult(`${errors.join(', ')}`);
       setIsIdChecked(false);
+      setShowValidationError(true);
       return;
     }
 
-    if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-      setIdCheckResult('아이디는 영문, 숫자, 언더스코어(_)만 사용 가능합니다.');
-      setIsIdChecked(false);
-      return;
-    }
+    // 유효성 검사 통과 시 에러 상태 해제
+    setShowValidationError(false);
 
     try {
       setIdCheckResult('중복 확인 중...');
@@ -165,6 +174,27 @@ function SignUp() {
     if (name === 'username') {
       setIsIdChecked(false);
       setIdCheckResult('');
+      
+      // 실시간으로 조건 체크해서 빨간색 표시
+      if (value) {
+        const errors: string[] = [];
+        if (value.length < 3) {
+          errors.push('3자 이상 입력 필요');
+        }
+        if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+          errors.push('영문, 숫자, 언더스코어(_)만 사용 가능 (한글 사용 불가)');
+        }
+        
+        if (errors.length > 0) {
+          setShowValidationError(true);
+          setIdCheckResult(`아이디 조건 불충족: ${errors.join(', ')}`);
+        } else {
+          setShowValidationError(false);
+          setIdCheckResult('');
+        }
+      } else {
+        setShowValidationError(false);
+      }
     }
 
     // 에러 초기화
@@ -230,8 +260,10 @@ function SignUp() {
                         type="text"
                         required
                         className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 ${
-                          errors.username
-                            ? 'border-red-300 focus:ring-red-400 focus:border-red-400'
+                          showValidationError || errors.username
+                            ? 'border-red-500 focus:ring-red-400 focus:border-red-500 bg-red-50'
+                            : isIdChecked
+                            ? 'border-green-500 focus:ring-green-400 focus:border-green-500 bg-green-50'
                             : 'border-gray-300 focus:ring-orange-400 focus:border-orange-400'
                         }`}
                         placeholder="아이디를 입력하세요"
@@ -246,12 +278,31 @@ function SignUp() {
                         중복확인
                       </button>
                     </div>
-                    {idCheckResult && (
-                      <p className={`text-xs mt-1 ${idCheckResult.includes('사용 가능') ? 'text-green-600' : 'text-red-600'}`}>
+                    {/* 유효성 검사 에러 메시지 (강조 효과) */}
+                    {showValidationError && idCheckResult && (
+                      <div className="mt-1 p-2 bg-red-100 border border-red-300 rounded-md">
+                        <p className="text-sm text-red-700 font-medium flex items-center">
+                          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                          {idCheckResult}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* 중복확인 결과 */}
+                    {idCheckResult && !showValidationError && (
+                      <p className={`text-sm mt-1 font-medium ${
+                        idCheckResult.includes('사용 가능') 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      }`}>
                         {idCheckResult}
                       </p>
                     )}
-                    {errors.username && <p className="text-xs text-red-600 mt-1">{errors.username}</p>}
+                    
+                    {/* 폼 제출 시 에러 */}
+                    {errors.username && <p className="text-sm text-red-600 mt-1 font-medium">{errors.username}</p>}
                   </div>
 
                   <div>
