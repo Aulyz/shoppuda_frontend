@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
 
 function Login() {
-  // const [email, setEmail] = useState(''); // 이메일 상태 제거
-  const [username, setUsername] = useState(''); // 아이디 상태 추가
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  // const { login } = useAuthStore(); // 필요시 사용
+  const location = useLocation();
+  const { login } = useAuthStore();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -19,27 +20,46 @@ function Login() {
     e.preventDefault();
     setError('');
 
-    // 로그인 데이터 생성 - 아이디와 비밀번호 사용
     const loginData = {
-      username, // 이메일에서 아이디로 변경
+      username,
       password,
+      remember_me: rememberMe,
     };
 
+    const searchParams = new URLSearchParams(location.search);
+    const nextUrl = searchParams.get('next') || '/';
+
     try {
-      // 1. API를 통해 로그인 시도
-      const response = await api.login(loginData);
-      const { access: accessToken, refresh: refreshToken } = response;
+      const response = await api.login(loginData, nextUrl !== '/' ? nextUrl : undefined);
 
-      // 2. 성공 시 Zustand 스토어에 토큰과 사용자 정보 저장
-      useAuthStore.getState().login(accessToken, refreshToken);
-
-      // 3. 홈페이지 또는 이전 페이지로 리다이렉트
-      navigate('/');
+      if (response.status === 'OK') {
+        // 로그인 성공 시 처리
+        if (response.type && response.next_url) {
+          // 사용자 타입 정보를 스토어에 저장 (필요시)
+          login(null, null, {
+            type: response.type,
+            username: username,
+          });
+          
+          // next_url로 리다이렉트
+          navigate(response.next_url);
+        } else {
+          // 기본 메인 페이지로 리다이렉트
+          navigate('/');
+        }
+      } else {
+        setError(response.message || '로그인에 실패했습니다.');
+      }
     } catch (err: any) {
       console.error("Login failed:", err);
-      // 백엔드에서 보내는 에러 메시지 형식에 맞게 조정
-      const errorMessage = err?.response?.data?.detail || err?.response?.data?.non_field_errors?.[0] || '로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.';
-      setError(errorMessage);
+      
+      if (err?.response?.data?.status === 'ERROR') {
+        setError(err.response.data.message);
+      } else if (err?.response?.status === 405) {
+        setError('잘못된 요청 방식입니다.');
+      } else {
+        setError('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
+      }
     }
   };
 
@@ -143,9 +163,11 @@ function Login() {
                     name="remember-me"
                     type="checkbox"
                     className="h-4 w-4 text-orange-500 focus:ring-orange-400 border-gray-300 rounded"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                   />
                   <label htmlFor="remember-me" className="ml-2 text-gray-600">
-                    로그인 상태 유지
+                    로그인 상태 유지 (2주)
                   </label>
                 </div>
                 <a href="#" className="text-orange-600 hover:text-pink-600 transition-colors">

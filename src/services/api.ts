@@ -8,6 +8,7 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 })
 
 // Request interceptor to add auth token
@@ -46,7 +47,7 @@ axiosInstance.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${access}`
           return axiosInstance(originalRequest)
         }
-      } catch (refreshError) {
+      } catch {
         useAuthStore.getState().logout()
         window.location.href = '/login'
       }
@@ -58,16 +59,42 @@ axiosInstance.interceptors.response.use(
 
 export const api = {
   // Auth
-  login: (data: { username: string; password: string }) =>
-    axios.post(`${API_BASE_URL}/token/`, data).then(res => res.data),
+  login: (data: { username: string; password: string; remember_me?: boolean }, next_url?: string) => {
+    const params = new URLSearchParams();
+    if (next_url) {
+      params.set('next', next_url);
+    }
+    
+    const formData = new FormData();
+    formData.append('username', data.username);
+    formData.append('password', data.password);
+    if (data.remember_me) {
+      formData.append('remember_me', 'true');
+    }
+
+    return axios.post(`${API_BASE_URL}/account/login/${params.toString() ? '?' + params.toString() : ''}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      withCredentials: true,
+    }).then(res => res.data);
+  },
+  
+  logout: () =>
+    axios.get(`${API_BASE_URL}/account/logout/`, { withCredentials: true }).then(res => res.data),
   
   signup: (data: {
     username: string
     email: string
     password: string
-    first_name?: string
-    last_name?: string
+    first_name: string
   }) => axios.post(`${API_BASE_URL}/signup/`, data).then(res => res.data),
+  
+  checkIdDuplicate: (username: string) =>
+    axios.get(`${API_BASE_URL}/account/check-username`, { 
+      params: { username },
+      withCredentials: true 
+    }).then(res => res.data),
   
   refreshToken: (refresh: string) =>
     axios.post(`${API_BASE_URL}/token/refresh/`, { refresh }).then(res => res.data),

@@ -3,11 +3,12 @@ import { persist } from 'zustand/middleware'
 import { jwtDecode } from 'jwt-decode'
 
 interface User {
-  id: number
+  id?: number
   username: string
-  email: string
+  email?: string
   first_name?: string
   last_name?: string
+  type?: 'CUSTOMER' | 'STAFF' | 'ADMIN'
 }
 
 interface AuthState {
@@ -15,7 +16,7 @@ interface AuthState {
   refreshToken: string | null
   user: User | null
   isAuthenticated: boolean
-  login: (accessToken: string, refreshToken: string) => void
+  login: (accessToken: string | null, refreshToken: string | null, user?: User) => void
   logout: () => void
   updateTokens: (accessToken: string, refreshToken: string) => void
 }
@@ -28,25 +29,35 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
 
-      login: (accessToken, refreshToken) => {
-        try {
-          const decoded: any = jwtDecode(accessToken)
-          const user: User = {
-            id: decoded.user_id,
-            username: decoded.username || '',
-            email: decoded.email || '',
-            first_name: decoded.first_name,
-            last_name: decoded.last_name,
+      login: (accessToken, refreshToken, user) => {
+        if (accessToken && refreshToken) {
+          try {
+            const decoded: any = jwtDecode(accessToken)
+            const userData: User = {
+              id: decoded.user_id,
+              username: decoded.username || '',
+              email: decoded.email || '',
+              first_name: decoded.first_name,
+              last_name: decoded.last_name,
+            }
+            
+            set({
+              accessToken,
+              refreshToken,
+              user: userData,
+              isAuthenticated: true,
+            })
+          } catch (error) {
+            console.error('Error decoding token:', error)
           }
-          
+        } else if (user) {
+          // 토큰 기반이 아닌 로그인 처리 (백엔드 API 응답 기반)
           set({
-            accessToken,
-            refreshToken,
+            accessToken: null,
+            refreshToken: null,
             user,
             isAuthenticated: true,
           })
-        } catch (error) {
-          console.error('Error decoding token:', error)
         }
       },
 

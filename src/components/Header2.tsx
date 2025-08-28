@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import BannerNotification from './BannerNotification';
 import MainNavigation from './MainNavigation';
+import { useAuthStore } from '../store/authStore';
+import { api } from '../services/api';
 
 const Header2 = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const [showGif, setShowGif] = useState(true);
   const [isCustomerServiceOpen, setIsCustomerServiceOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -28,6 +32,20 @@ const Header2 = () => {
   // 홈페이지인지 확인
   const isHomePage = location.pathname === '/';
 
+  // 로그아웃 처리
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+      logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // 에러가 발생해도 로컬 로그아웃은 진행
+      logout();
+      navigate('/');
+    }
+  };
+
   return (
     <div className={`${isHomePage ? 'absolute top-0' : ''} bg-white/95 backdrop-blur-md border-b border-orange-100 relative z-50 shadow-sm`}>
       {/* BannerNotification - 최상단에 표시 */}
@@ -35,10 +53,21 @@ const Header2 = () => {
 
       {/* TopMenuBar - 배너 아래에 표시 */}
       <div className="container-max flex justify-end items-center text-sm text-gray-700 py-2 space-x-2">
-        <Link to="/signup" className="nav-link">회원가입</Link>
-        <span>|</span>
-        <Link to="/login" className="nav-link">로그인</Link>
-        <span>|</span>
+        {!isAuthenticated ? (
+          <>
+            <Link to="/signup" className="nav-link">회원가입</Link>
+            <span>|</span>
+            <Link to="/login" className="nav-link">로그인</Link>
+            <span>|</span>
+          </>
+        ) : (
+          <>
+            <span className="text-gray-600">안녕하세요, {user?.username}님!</span>
+            <span>|</span>
+            <button onClick={handleLogout} className="nav-link">로그아웃</button>
+            <span>|</span>
+          </>
+        )}
         <Link to="/orders" className="nav-link">주문조회</Link>
         <span>|</span>
         <Link to="/recent-products" className="nav-link">최근본상품</Link>
@@ -139,12 +168,23 @@ const Header2 = () => {
                 : 'scale-95 opacity-0 invisible'
             }`}
                 role="menu" aria-orientation="vertical" tabIndex={-1}>
-              <Link to="/profile" className="dropdown-item"
-                role="menuitem" tabIndex={-1}>Profile</Link>
-              <Link to="/settings" className="dropdown-item"
-                role="menuitem" tabIndex={-1}>Settings</Link>
-              <button className="dropdown-item w-full text-left"
-                role="menuitem" tabIndex={-1}>Sign out</button>
+              {isAuthenticated ? (
+                <>
+                  <Link to="/profile" className="dropdown-item"
+                    role="menuitem" tabIndex={-1}>프로필</Link>
+                  <Link to="/settings" className="dropdown-item"
+                    role="menuitem" tabIndex={-1}>설정</Link>
+                  <button onClick={handleLogout} className="dropdown-item w-full text-left"
+                    role="menuitem" tabIndex={-1}>로그아웃</button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" className="dropdown-item"
+                    role="menuitem" tabIndex={-1}>로그인</Link>
+                  <Link to="/signup" className="dropdown-item"
+                    role="menuitem" tabIndex={-1}>회원가입</Link>
+                </>
+              )}
             </div>
           </div>
         </div>
