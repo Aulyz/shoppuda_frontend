@@ -72,7 +72,7 @@ export const api = {
       formData.append('remember_me', 'true');
     }
 
-    return axios.post(`${API_BASE_URL}/account/login/${params.toString() ? '?' + params.toString() : ''}`, formData, {
+    return axios.post(`${API_BASE_URL}/account/login${params.toString() ? '?' + params.toString() : ''}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -81,14 +81,14 @@ export const api = {
   },
   
   logout: () =>
-    axios.get(`${API_BASE_URL}/account/logout/`, { withCredentials: true }).then(res => res.data),
+    axios.get(`${API_BASE_URL}/account/logout`, { withCredentials: true }).then(res => res.data),
   
   signup: (data: {
     username: string
     email: string
     password: string
     first_name: string
-  }) => axios.post(`${API_BASE_URL}/signup/`, data).then(res => res.data),
+  }) => axios.post(`${API_BASE_URL}/account/signup/`, data).then(res => res.data),
   
   checkIdDuplicate: (username: string) =>
     axios.get(`${API_BASE_URL}/account/check-username`, { 
@@ -109,14 +109,14 @@ export const api = {
     limit?: number
   }) => axiosInstance.get('/shop/products/', { params }).then(res => res.data),
   
-  getProduct: (id: number) =>
+  getProduct: (id: number | string) =>
     axiosInstance.get(`/shop/products/${id}/`).then(res => res.data),
 
   // Cart
   getCart: () => axiosInstance.get('/shop/cart/').then(res => res.data),
   
   addToCart: (data: {
-    product_id: number
+    product_id: number | string
     quantity: number
     size?: string
     color?: string
@@ -131,7 +131,7 @@ export const api = {
   // Wishlist
   getWishlist: () => axiosInstance.get('/shop/wishlist/').then(res => res.data),
   
-  toggleWishlist: (productId: number) =>
+  toggleWishlist: (productId: number | string) =>
     axiosInstance.post(`/shop/wishlist/toggle/${productId}/`).then(res => res.data),
 
   // Orders

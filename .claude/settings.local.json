@@ -5,7 +5,13 @@
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "WebSearch",
+      "Bash(cat:*)",
+      "Bash(npx tsc:*)",
+      "Bash(curl:*)",
+      "Read(C:\\Users\\Ryul8\\Desktop\\screen/**)",
+      "Read(C:\\Users\\Ryul8\\Desktop\\screen/**)"
     ],
     "deny": [],
     "ask": []

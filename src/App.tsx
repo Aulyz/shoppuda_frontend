@@ -10,6 +10,9 @@ import Cart from './pages/Cart'
 import Login from './pages/Login'
 import SignUp from './pages/SignUp'
 import MyPage from './pages/MyPage'
+import QnA from './pages/QnA'
+import ProductsNew from './pages/ProductsNew'
+import ProductsSale from './pages/ProductsSale'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,11 +34,14 @@ function App() {
             <Route path="/home" element={<Home />} />
             <Route path="/products" element={<ProductsAll />} />
             <Route path="/products/best" element={<ProductsBest />} />
+            <Route path="/products/new" element={<ProductsNew />} />
+            <Route path="/products/sale" element={<ProductsSale />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/mypage" element={<MyPage />} />
+            <Route path="/qna" element={<QnA />} />
           </Routes>
         </Layout>
         <Toaster 

@@ -10,11 +10,13 @@ function ProductsNew() {
     window.scrollTo(0, 0)
   }, [])
 
-  // 신상품 데이터 패칭
+  // 신상품 데이터 패칭 (최신 순으로)
   const { data: newProductsData, isLoading: isNewLoading, isError: isNewError } = useQuery(
     ['products-new'],
-    () => api.getProducts({ ordering: '-created_at', page: 1, limit: 8 }),
+    () => api.getProducts({ ordering: '-created_at', page: 1, limit: 12 }),
     {
+      retry: 3,
+      retryDelay: 1000,
       onSuccess: (data) => {
         console.log('신상품 데이터:', data)
       },
@@ -24,51 +26,55 @@ function ProductsNew() {
     }
   )
 
-  // 신상품이 없을 경우 기존 제품 패칭 (인기순으로 정렬)
-  const { data: existingProductsData, isLoading: isExistingLoading, isError: isExistingError } = useQuery(
-    ['products-existing'],
-    () => api.getProducts({ ordering: '-view_count', page: 1, limit: 8 }),
+  // 신상품이 없을 경우 전체 상품에서 랜덤하게 가져오기
+  const { data: fallbackProductsData, isLoading: isFallbackLoading } = useQuery(
+    ['products-fallback'],
+    () => api.getProducts({ page: 1, limit: 50 }), // 더 많은 상품을 가져와서 랜덤 선택
     {
-      enabled: !isNewLoading && (!newProductsData?.products || newProductsData.products?.length === 0),
+      enabled: !isNewLoading && (!newProductsData?.products?.length && !newProductsData?.results?.length),
+      retry: 3,
+      retryDelay: 1000,
       onSuccess: (data) => {
-        console.log('기존 제품 데이터:', data)
+        console.log('대체 상품 데이터:', data)
       },
       onError: (error) => {
-        console.error('기존 제품 로딩 에러:', error)
+        console.error('대체 상품 로딩 에러:', error)
       }
     }
   )
 
-  // 최종 표시할 제품 데이터
-  const productsToShow = newProductsData?.products?.length > 0 
-    ? newProductsData.products 
-    : existingProductsData?.products || []
+  // 상품 데이터 처리 및 랜덤 선택
+  const newProducts = newProductsData?.results || newProductsData?.products || newProductsData?.data || []
+  const fallbackProducts = fallbackProductsData?.results || fallbackProductsData?.products || fallbackProductsData?.data || []
 
-  console.log('productsToShow:', productsToShow)
-  console.log('newProductsData:', newProductsData)
-  console.log('existingProductsData:', existingProductsData)
+  // 신상품이 있으면 신상품을, 없으면 전체 상품에서 랜덤하게 선택
+  let productsToShow: any[] = []
+  let pageTitle = "상품 목록"
+  let isUsingFallback = false
 
-  const isLoading = isNewLoading || (isExistingLoading && (!newProductsData?.products || newProductsData.products?.length === 0))
-  const isError = isNewError && isExistingError
+  if (Array.isArray(newProducts) && newProducts.length > 0) {
+    productsToShow = newProducts
+    pageTitle = "최신 신상품"
+  } else if (Array.isArray(fallbackProducts) && fallbackProducts.length > 0) {
+    // 랜덤하게 12개 선택
+    const shuffled = [...fallbackProducts].sort(() => 0.5 - Math.random())
+    productsToShow = shuffled.slice(0, 12)
+    pageTitle = "추천 상품"
+    isUsingFallback = true
+  }
 
-  // 단일 제품과 블랜딩 소개 섹션
-  const { data: singleProductData, isLoading: isSingleLoading } = useQuery(
-    ['product-single'],
-    () => api.getProducts({ ordering: '-created_at', page: 1, limit: 1 }),
-    {
-      staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
-      onSuccess: (data) => {
-        console.log('단일 제품 데이터:', data)
-      },
-      onError: (error) => {
-        console.error('단일 제품 로딩 에러:', error)
-      }
-    }
-  )
+  // 유효한 상품만 필터링
+  const validProducts = productsToShow.filter(product => product && product.id)
 
-  const singleProduct = singleProductData?.products?.[0]
+  console.log('신상품:', newProducts)
+  console.log('대체 상품:', fallbackProducts)
+  console.log('최종 표시 상품:', validProducts)
+  console.log('대체 모드:', isUsingFallback)
 
-  // 로딩 상태 표시
+  // 로딩 상태
+  const isLoading = isNewLoading || isFallbackLoading
+  const isError = isNewError && (!fallbackProductsData || fallbackProducts.length === 0)
+
   if (isLoading) {
     return (
       <div className="bg-gradient-to-br from-blue-50 via-white to-pink-50 min-h-screen">
@@ -94,7 +100,7 @@ function ProductsNew() {
     )
   }
 
-  // 에러 상태 표시
+  // 에러 상태
   if (isError) {
     return (
       <div className="bg-gradient-to-br from-blue-50 via-white to-pink-50 min-h-screen">
@@ -131,6 +137,7 @@ function ProductsNew() {
     )
   }
 
+
   return (
     <div className="bg-gradient-to-br from-blue-50 via-white to-pink-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -147,131 +154,63 @@ function ProductsNew() {
           </p>
         </div>
 
-        {/* 단일 제품 + 블랜딩 소개 섹션 */}
-        {!isSingleLoading && singleProduct && (
-          <section className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mb-12">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              {/* 제품 이미지 */}
-              <div className="flex justify-center">
-                <div className="relative group">
-                  <img
-                    src={singleProduct.image || '/placeholder.png'}
-                    alt={singleProduct.name}
-                    className="rounded-2xl shadow-lg w-full max-w-md h-auto object-cover"
-                  />
-                  {singleProduct.discount_price && (
-                    <div className="absolute top-4 right-4 bg-blue-500 text-white text-sm font-bold px-3 py-1 rounded-full">
-                      {Math.round(((parseFloat(singleProduct.price) - parseFloat(singleProduct.discount_price)) / parseFloat(singleProduct.price)) * 100)}% OFF
-                    </div>
-                  )}
-                </div>
+        {/* 대체 상품 알림 */}
+        {isUsingFallback && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
               </div>
-
-              {/* 제품 소개 및 블랜딩 */}
-              <div className="space-y-6">
-                <div>
-                  <span className="inline-block bg-gradient-to-r from-blue-400 to-pink-400 text-white text-xs font-bold px-3 py-1 rounded-full mb-3">
-                    오늘의 추천
-                  </span>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    {singleProduct.name}
-                  </h2>
-                  <p className="text-gray-600 leading-relaxed">
-                    {singleProduct.description || '이 제품은 특별한 재료와 정성으로 만들어진 제품입니다. 당신의 일상에 특별한 순간을 선사할 것입니다.'}
-                  </p>
-                </div>
-
-                <div className="border-t border-gray-200 pt-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">✨ 제품 특징</h3>
-                  <ul className="space-y-2 text-gray-600">
-                    <li className="flex items-start">
-                      <span className="text-blue-500 mr-2">•</span>
-                      <span>고급 소재 사용으로 내구성이 뛰어남</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-blue-500 mr-2">•</span>
-                      <span>세련된 디자인으로 어떤 공간에도 잘 어울림</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-blue-500 mr-2">•</span>
-                      <span>사용이 간편하고 관리가 쉬움</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    {singleProduct.discount_price ? (
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-blue-500">
-                          ₩{parseFloat(singleProduct.discount_price).toLocaleString()}
-                        </span>
-                        <span className="text-lg text-gray-500 line-through">
-                          ₩{parseFloat(singleProduct.price).toLocaleString()}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-2xl font-bold text-gray-900">
-                        ₩{parseFloat(singleProduct.price).toLocaleString()}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {singleProduct.id ? (
-                    <Link
-                      to={`/products/${singleProduct.id}`}
-                      className="bg-gradient-to-r from-blue-500 to-pink-400 hover:from-blue-600 hover:to-pink-500 text-white font-semibold py-3 px-6 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                    >
-                      자세히 보기
-                    </Link>
-                  ) : (
-                    <span className="bg-gray-400 text-white font-semibold py-3 px-6 rounded-full">
-                      상품 정보 없음
-                    </span>
-                  )}
-                </div>
+              <div className="ml-3">
+                <p className="text-sm text-blue-700">
+                  현재 신상품이 준비 중입니다. 대신 엄선된 추천 상품들을 보여드리고 있어요!
+                </p>
               </div>
             </div>
-          </section>
+          </div>
         )}
 
-        {/* 신상품 리스트 */}
+        {/* 상품 목록 */}
         <section className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            {newProductsData?.products?.length > 0 ? '최신 신상품' : '인기 제품'}
+            {pageTitle}
           </h2>
           
-          {productsToShow.length > 0 ? (
+          {validProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {productsToShow.map((product: any) => (
-                product.id ? (
-                  <Link
-                    key={product.id}
-                    to={`/products/${product.id}`}
-                    className="group bg-white rounded-2xl shadow border border-gray-100 hover:shadow-xl transition-all duration-200 relative"
-                  >
+              {validProducts.map((product: any) => (
+                <Link
+                  key={product.id}
+                  to={`/products/${product.id}`}
+                  className="group bg-white rounded-2xl shadow border border-gray-100 hover:shadow-xl transition-all duration-200"
+                >
                   <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-2xl bg-gray-100 relative">
                     <img
-                      src={product.image || '/placeholder.png'}
-                      alt={product.name}
+                      src={product.image || product.thumbnail || '/placeholder.png'}
+                      alt={product.name || product.title || '상품 이미지'}
                       className="h-56 w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.png'
+                      }}
                     />
-                    {product.discount_price && (
-                      <div className="absolute top-3 right-3 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                        {Math.round(((parseFloat(product.price) - parseFloat(product.discount_price)) / parseFloat(product.price)) * 100)}% OFF
+                    {(product.discount_price || product.sale_price) && product.price && (
+                      <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {Math.round(((parseFloat(product.price) - parseFloat(product.discount_price || product.sale_price)) / parseFloat(product.price)) * 100)}% OFF
                       </div>
                     )}
                   </div>
                   <div className="p-4">
-                    <h3 className="text-base font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-500 transition-colors duration-200">
-                      {product.name}
+                    <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-500 transition-colors duration-200">
+                      {product.name || product.title || '상품명'}
                     </h3>
                     <div className="flex items-center justify-between">
                       <div>
-                        {product.discount_price ? (
+                        {product.discount_price || product.sale_price ? (
                           <div className="flex flex-col">
-                            <p className="text-base font-bold text-blue-500">
-                              ₩{parseFloat(product.discount_price).toLocaleString()}
+                            <p className="text-base font-bold text-red-500">
+                              ₩{parseFloat(product.discount_price || product.sale_price).toLocaleString()}
                             </p>
                             <p className="text-xs text-gray-500 line-through">
                               ₩{parseFloat(product.price).toLocaleString()}
@@ -279,25 +218,25 @@ function ProductsNew() {
                           </div>
                         ) : (
                           <p className="text-base font-bold text-gray-900">
-                            ₩{parseFloat(product.price).toLocaleString()}
+                            ₩{parseFloat(product.price || '0').toLocaleString()}
                           </p>
                         )}
                       </div>
-                      {product.created_at && (
-                        <span className="text-xs text-white bg-gradient-to-r from-blue-400 to-pink-400 px-2 py-1 rounded-full font-semibold ml-2">
-                          NEW
-                        </span>
-                      )}
+                      <span className={`text-xs text-white px-2 py-1 rounded-full font-semibold ml-2 ${
+                        isUsingFallback 
+                          ? 'bg-gradient-to-r from-green-400 to-blue-400' 
+                          : 'bg-gradient-to-r from-blue-400 to-pink-400'
+                      }`}>
+                        {isUsingFallback ? '추천' : 'NEW'}
+                      </span>
                     </div>
+                    {product.description && (
+                      <p className="text-xs text-gray-500 mt-2 line-clamp-2">
+                        {product.description}
+                      </p>
+                    )}
                   </div>
                 </Link>
-                ) : (
-                  <div key={Math.random()} className="bg-white rounded-2xl shadow border border-gray-100 p-4">
-                    <div className="text-center text-gray-500">
-                      <p>상품 정보를 불러올 수 없습니다</p>
-                    </div>
-                  </div>
-                )
               ))}
             </div>
           ) : (
@@ -318,6 +257,35 @@ function ProductsNew() {
             </div>
           )}
         </section>
+
+        {/* 디버그 정보 */}
+        <div className="mt-8 p-4 bg-gray-100 rounded-lg">
+          <h3 className="font-bold mb-2">디버그 정보:</h3>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <p className="font-semibold">신상품 데이터:</p>
+              <p>로딩: {isNewLoading ? 'Yes' : 'No'}</p>
+              <p>에러: {isNewError ? 'Yes' : 'No'}</p>
+              <p>상품 수: {newProducts.length}</p>
+            </div>
+            <div>
+              <p className="font-semibold">대체 상품 데이터:</p>
+              <p>로딩: {isFallbackLoading ? 'Yes' : 'No'}</p>
+              <p>상품 수: {fallbackProducts.length}</p>
+              <p>대체 모드: {isUsingFallback ? 'Yes' : 'No'}</p>
+            </div>
+          </div>
+          <p>최종 표시 상품 수: {validProducts.length}</p>
+          <p>페이지 제목: {pageTitle}</p>
+          <details className="mt-2">
+            <summary className="cursor-pointer font-semibold">전체 응답 데이터</summary>
+            <pre className="text-xs overflow-auto max-h-32 mt-2 bg-white p-2 rounded">
+              신상품: {JSON.stringify(newProductsData, null, 2)}
+              {'\n\n'}
+              대체상품: {JSON.stringify(fallbackProductsData, null, 2)}
+            </pre>
+          </details>
+        </div>
       </div>
     </div>
   )
