@@ -109,8 +109,22 @@ export const api = {
     limit?: number
   }) => axiosInstance.get('/shop/products/', { params }).then(res => res.data),
   
-  getProduct: (id: number | string) =>
-    axiosInstance.get(`/shop/products/${id}/`).then(res => res.data),
+  getProduct: (id: number | string) => {
+    // UUID인 경우 백엔드 API 이슈로 인해 product list에서 찾기
+    if (typeof id === 'string' && id.includes('-')) {
+      // UUID 형태인 경우 products list에서 해당 상품 찾기
+      return axiosInstance.get('/shop/products/').then(res => {
+        const products = res.data.products || []
+        const product = products.find((p: any) => p.id === id)
+        if (!product) {
+          throw new Error('Product not found')
+        }
+        return product
+      })
+    }
+    // 정수 ID인 경우 기존 방식 사용
+    return axiosInstance.get(`/shop/products/${id}/`).then(res => res.data)
+  },
 
   // Cart
   getCart: () => axiosInstance.get('/shop/cart/').then(res => res.data),
