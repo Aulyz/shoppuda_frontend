@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
+import { getKakaoToken } from '../utils/kakaoAuth'
 
 const API_BASE_URL = 'http://shoppuda.kro.kr/api'
 
@@ -14,9 +15,14 @@ const axiosInstance = axios.create({
 // Request interceptor to add auth token
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().accessToken
+    const authStore = useAuthStore.getState()
+    const token = authStore.accessToken
+    const kakaoToken = getKakaoToken()
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    } else if (kakaoToken && authStore.user?.loginType === 'kakao') {
+      config.headers['X-Kakao-Token'] = kakaoToken
     }
     return config
   },
@@ -86,8 +92,18 @@ export const api = {
   signup: (data: {
     username: string
     email: string
-    password: string
+    password1: string
+    password2: string
     first_name: string
+    phone_number: string
+    birth_date?: string
+    gender?: string
+    postal_code?: string
+    address?: string
+    detail_address?: string
+    terms_agreed: boolean
+    privacy_agreed: boolean
+    marketing_agreed: boolean
   }) => axios.post(`${API_BASE_URL}/account/signup/`, data).then(res => res.data),
   
   checkIdDuplicate: (username: string) =>

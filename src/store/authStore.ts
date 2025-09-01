@@ -9,6 +9,7 @@ interface User {
   first_name?: string
   last_name?: string
   type?: 'CUSTOMER' | 'STAFF' | 'ADMIN'
+  loginType?: 'normal' | 'kakao'
 }
 
 interface AuthState {
@@ -62,6 +63,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // 카카오 토큰 localStorage에서 제거
+        localStorage.removeItem('kakao_access_token');
+        localStorage.removeItem('kakao_refresh_token');
+        
         set({
           accessToken: null,
           refreshToken: null,

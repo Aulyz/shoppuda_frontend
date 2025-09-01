@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
+import KakaoLogin from '../components/KakaoLogin';
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -15,6 +16,49 @@ function Login() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  const handleKakaoSuccess = async (kakaoData: any) => {
+    try {
+      console.log('카카오 로그인 데이터:', kakaoData);
+      
+      // 카카오 토큰을 localStorage에 저장
+      localStorage.setItem('kakao_access_token', kakaoData.accessToken);
+      if (kakaoData.refreshToken) {
+        localStorage.setItem('kakao_refresh_token', kakaoData.refreshToken);
+      }
+      
+      // 카카오 프로필 정보 추출
+      const profile = kakaoData.profile;
+      const kakaoAccount = profile.kakao_account;
+      const profileInfo = kakaoAccount?.profile;
+      
+      // 사용자 정보로 로그인 처리
+      const kakaoUser = {
+        id: profile.id,
+        username: profileInfo?.nickname || `kakao_${profile.id}`,
+        email: kakaoAccount?.email || '',
+        first_name: profileInfo?.nickname || '',
+        type: 'CUSTOMER' as const,
+        loginType: 'kakao' as const
+      };
+      
+      console.log('처리된 카카오 사용자 정보:', kakaoUser);
+      
+      login(null, null, kakaoUser);
+      
+      const searchParams = new URLSearchParams(location.search);
+      const nextUrl = searchParams.get('next') || '/';
+      navigate(nextUrl);
+    } catch (err: any) {
+      console.error('카카오 로그인 처리 실패:', err);
+      setError('카카오 로그인에 실패했습니다.');
+    }
+  };
+
+  const handleKakaoFailure = (error: any) => {
+    console.error('카카오 로그인 오류:', error);
+    setError('카카오 로그인에 실패했습니다.');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,11 +240,10 @@ function Login() {
               
               <div className="flex justify-center space-x-4">
                 {/* 카카오 로그인 */}
-                <button className="w-12 h-12 bg-yellow-400 hover:bg-yellow-500 rounded-full flex items-center justify-center transition-colors duration-200">
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3z"/>
-                  </svg>
-                </button>
+                <KakaoLogin 
+                  onSuccess={handleKakaoSuccess}
+                  onFailure={handleKakaoFailure}
+                />
                 
                 {/* 구글 로그인 */}
                 <button className="w-12 h-12 bg-white hover:bg-gray-50 border border-gray-200 rounded-full flex items-center justify-center transition-colors duration-200">
