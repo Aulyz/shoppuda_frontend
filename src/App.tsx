@@ -15,6 +15,7 @@ import QnA from './pages/QnA'
 import ProductsNew from './pages/ProductsNew'
 import ProductsSale from './pages/ProductsSale'
 import { useAuthStore } from './store/authStore'
+import LoginSuccess from "./pages/LoginSuccess"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,7 +56,7 @@ function KakaoAuthHandler() {
             body: new URLSearchParams({
               grant_type: 'authorization_code',
               client_id: import.meta.env.VITE_KAKAO_APP_KEY,
-              redirect_uri: 'http://localhost:3001',
+              redirect_uri: import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://localhost:3000/oauth/kakao/callback',
               code: code,
             }),
           });
@@ -146,6 +147,7 @@ function App() {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/qna" element={<QnA />} />
+            <Route path="/login/success" element={<LoginSuccess />} />
           </Routes>
         </Layout>
         <Toaster 

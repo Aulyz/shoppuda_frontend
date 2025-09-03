@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { API_BASE_URL } from "../services/api";
 
 declare global {
   interface Window {
@@ -119,7 +120,8 @@ const KakaoLogin: React.FC<KakaoLoginProps> = ({ onSuccess, onFailure }) => {
     }
 
     // 카카오 로그인 - 루트 경로로 리다이렉트 시도
-    const redirectUri = 'http://localhost:3001';
+
+    const redirectUri = import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://localhost:3000/oauth/kakao/callback';
     
     console.log('사용할 리다이렉트 URI:', redirectUri);
     console.log('현재 URL:', window.location.href);

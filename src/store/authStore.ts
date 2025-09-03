@@ -1,6 +1,7 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import { jwtDecode } from 'jwt-decode'
+// src/store/authStore.ts
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
+import { jwtDecode } from "jwt-decode"
 
 interface User {
   id?: number
@@ -8,8 +9,8 @@ interface User {
   email?: string
   first_name?: string
   last_name?: string
-  type?: 'CUSTOMER' | 'STAFF' | 'ADMIN'
-  loginType?: 'normal' | 'kakao'
+  type?: "CUSTOMER" | "STAFF" | "ADMIN"
+  loginType?: "normal" | "kakao"
 }
 
 interface AuthState {
@@ -36,12 +37,13 @@ export const useAuthStore = create<AuthState>()(
             const decoded: any = jwtDecode(accessToken)
             const userData: User = {
               id: decoded.user_id,
-              username: decoded.username || '',
-              email: decoded.email || '',
+              username: decoded.username || "",
+              email: decoded.email || "",
               first_name: decoded.first_name,
               last_name: decoded.last_name,
+              loginType: decoded.loginType || "normal",
             }
-            
+
             set({
               accessToken,
               refreshToken,
@@ -49,10 +51,10 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
             })
           } catch (error) {
-            console.error('Error decoding token:', error)
+            console.error("Error decoding token:", error)
           }
         } else if (user) {
-          // 토큰 기반이 아닌 로그인 처리 (백엔드 API 응답 기반)
+          // 토큰 기반이 아닌 경우
           set({
             accessToken: null,
             refreshToken: null,
@@ -63,10 +65,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        // 카카오 토큰 localStorage에서 제거
-        localStorage.removeItem('kakao_access_token');
-        localStorage.removeItem('kakao_refresh_token');
-        
+        localStorage.removeItem("kakao_access_token")
+        localStorage.removeItem("kakao_refresh_token")
+
         set({
           accessToken: null,
           refreshToken: null,
@@ -80,7 +81,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage", // localStorage key
     }
   )
 )
