@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between gap-16 mb-12">
           <div className="flex-grow min-w-[320px]">
             <div className="mb-8">
-              <div className="text-[2.5rem] font-serif font-semibold brand-font bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-300 cursor-pointer">Shoppuda</div>
+              <div className="text-[2.5rem] font-serif font-semibold brand-font bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-300 cursor-pointer">ShopPuda</div>
               <div className="inline-block mt-3 px-4 py-2 bg-gradient-to-r from-orange-200 to-pink-200 text-orange-800 rounded-full font-semibold text-base brand-font shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                 해외 쇼핑, 클릭 한 번으로
               </div>
@@ -35,7 +35,7 @@ const Footer = () => {
             <div className="mt-8">
               <div className="font-bold mb-4 text-lg text-gray-700">쇼핑몰 기본정보</div>
               <div className="space-y-1 text-sm leading-6">
-                <p><span className="font-bold">상호명</span> Shoppuda</p>
+                <p><span className="font-bold">상호명</span> ShopPuda</p>
                 <p><span className="font-bold">대표자명</span> 박수빈</p>
                 <p><span className="font-bold">사업장 주소</span> {/* 주소 입력 */}</p>
                 <p><span className="font-bold">대표 전화</span> 010-2474-0413</p>
@@ -63,7 +63,7 @@ const Footer = () => {
         </div>
         <div className="border-t-2 border-gradient-to-r from-orange-200 to-pink-200 pt-6 mt-12 flex flex-col md:flex-row justify-between items-center text-gray-500 text-sm">
           <div className="mb-3 md:mb-0">
-            Copyright © Shoppuda. All Rights Reserved. Hosting by Cafe24 Corp.
+            Copyright © ShopPuda. All Rights Reserved. Hosting by Cafe24 Corp.
           </div>
           <div className="flex items-center gap-4">
             <span className="font-semibold text-gray-700 mr-4 text-lg">SNS</span>
