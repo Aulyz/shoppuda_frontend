@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -7,7 +8,7 @@ function canUseStorage() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 }
 
-function getHiddenUntil(): number {
+function getHiddenUntil() {
   if (!canUseStorage()) return 0;
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return 0;
@@ -22,7 +23,7 @@ function setHiddenForOneDay() {
 }
 
 const BannerNotification = () => {
-  const [isHidden, setIsHidden] = useState(true); // 초기엔 숨김 → 클라이언트에서 판단 후 표시
+  const [isHidden, setIsHidden] = useState(true);
 
   useEffect(() => {
     const until = getHiddenUntil();
@@ -38,7 +39,7 @@ const BannerNotification = () => {
 
   return (
     <div className="bg-gradient-to-r from-orange-100 to-pink-100 border-b border-orange-200 z-40">
-      <div className="mx-auto relative flex items-center justify-center py-3 px-4">
+      <div className="container mx-auto relative flex items-center justify-center py-3 px-4">
         {/* 메시지 */}
         <div className="text-sm sm:text-base text-center">
           <a href="#" className="text-orange-800 hover:text-pink-800 transition-colors duration-200 font-medium">
@@ -63,7 +64,7 @@ const BannerNotification = () => {
             aria-label="배너 닫기"
             title="오늘 하루 보지 않기"
           >
-            ✕
+            <span className="text-lg">✕</span>
           </button>
         </div>
       </div>

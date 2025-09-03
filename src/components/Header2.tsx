@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import BannerNotification from "./BannerNotification";
@@ -41,7 +42,7 @@ const Header2 = () => {
       <BannerNotification />
 
       {/* ===== TopMenuBar (Desktop 전용) ===== */}
-      <div className="hidden lg:flex container-max justify-end items-center text-xs text-gray-600 py-1 gap-2">
+      <div className="hidden lg:flex container mx-auto justify-end items-center text-xs text-gray-600 py-1 gap-2">
         {!isAuthenticated ? (
           <>
             <Link to="/signup" className="hover:text-orange-600">회원가입</Link>
@@ -64,7 +65,7 @@ const Header2 = () => {
       </div>
 
       {/* ===== 메인 헤더 ===== */}
-      <div className="container-max flex items-center justify-between py-2 px-4 lg:px-0">
+      <div className="container mx-auto flex items-center justify-between py-2 px-4">
         {/* Left: 로고 */}
         <div className="flex items-center space-x-3">
           <Link to="/" className="flex-shrink-0">
@@ -83,24 +84,28 @@ const Header2 = () => {
         <div className="hidden lg:flex items-center gap-6">
           {/* Search */}
           <button aria-label="검색" className="hover:text-orange-600">
-            🔍
+            <span className="text-xl">🔍</span>
           </button>
           {/* Wishlist */}
           <Link to="/wishlist" aria-label="위시리스트" className="hover:text-pink-600">
-            ❤️
+            <span className="text-xl">❤️</span>
           </Link>
           {/* Cart */}
           <Link to="/cart" aria-label="장바구니" className="relative hover:text-orange-600">
-            🛒
+            <span className="text-xl">🛒</span>
             <span className="absolute -top-2 -right-2 bg-gradient-to-r from-pink-500 to-red-500 text-white text-xs rounded-full px-1">
               0
             </span>
           </Link>
           {/* Profile */}
           {isAuthenticated ? (
-            <Link to="/profile" className="hover:text-gray-800">👤</Link>
+            <Link to="/profile" className="hover:text-gray-800">
+              <span className="text-xl">👤</span>
+            </Link>
           ) : (
-            <Link to="/login" className="hover:text-gray-800">👤</Link>
+            <Link to="/login" className="hover:text-gray-800">
+              <span className="text-xl">👤</span>
+            </Link>
           )}
         </div>
 
@@ -109,8 +114,9 @@ const Header2 = () => {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="text-gray-700 hover:text-orange-600"
+            aria-label="메뉴"
           >
-            ☰
+            <span className="text-2xl">☰</span>
           </button>
         </div>
       </div>
@@ -124,21 +130,21 @@ const Header2 = () => {
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white shadow-md absolute top-full left-0 w-full z-40">
           <nav className="flex flex-col items-start p-4 space-y-2 text-sm">
-            <Link to="/" className="hover:text-orange-600">Home</Link>
-            <Link to="/best" className="hover:text-orange-600">Best</Link>
-            <Link to="/new" className="hover:text-orange-600">New</Link>
-            <Link to="/sale" className="hover:text-orange-600">Sale</Link>
-            <Link to="/qna" className="hover:text-orange-600">Q&A</Link>
+            <Link to="/" className="hover:text-orange-600 py-1">Home</Link>
+            <Link to="/best" className="hover:text-orange-600 py-1">Best</Link>
+            <Link to="/new" className="hover:text-orange-600 py-1">New</Link>
+            <Link to="/sale" className="hover:text-orange-600 py-1">Sale</Link>
+            <Link to="/qna" className="hover:text-orange-600 py-1">Q&A</Link>
             <hr className="w-full border-gray-200 my-2" />
             {!isAuthenticated ? (
               <>
-                <Link to="/signup" className="hover:text-orange-600">회원가입</Link>
-                <Link to="/login" className="hover:text-orange-600">로그인</Link>
+                <Link to="/signup" className="hover:text-orange-600 py-1">회원가입</Link>
+                <Link to="/login" className="hover:text-orange-600 py-1">로그인</Link>
               </>
             ) : (
               <>
-                <Link to="/profile" className="hover:text-orange-600">프로필</Link>
-                <button onClick={handleLogout} className="hover:text-orange-600 text-left w-full">로그아웃</button>
+                <Link to="/profile" className="hover:text-orange-600 py-1">프로필</Link>
+                <button onClick={handleLogout} className="hover:text-orange-600 text-left w-full py-1">로그아웃</button>
               </>
             )}
           </nav>

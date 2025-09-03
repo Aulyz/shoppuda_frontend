@@ -1,4 +1,3 @@
-// Home.tsx
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -10,7 +9,7 @@ import "swiper/css/pagination";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 
 /* ===============================
-   Hero Slider (반응형 최적화)
+   Hero Slider (완전 반응형)
    =============================== */
 const HeroSlider = () => {
   const slides = [
@@ -28,16 +27,15 @@ const HeroSlider = () => {
             slidesPerView={1}
             loop
             autoplay={{ delay: 5000, disableOnInteraction: false }}
-            // 네비게이션은 md 이상에서만
-            navigation={{ enabled: true }}
+            navigation={{ enabled: window.innerWidth >= 768 }} // 모바일에서는 네비게이션 비활성화
             pagination={{ clickable: true }}
             className="w-full"
           >
             {slides.map((s) => (
               <SwiperSlide key={s.id}>
                 <div className="w-full">
-                  {/* 모바일: 고정높이, 태블릿: 더 큰 높이, 데스크탑: 21:9 비율 */}
-                  <div className="w-full h-48 sm:h-60 md:h-72 lg:h-auto lg:aspect-[21/9]">
+                  {/* 모바일: 고정 높이, 태블릿: 큰 높이, 데스크탑: 21:9 비율 */}
+                  <div className="w-full h-48 xs:h-52 sm:h-60 md:h-72 lg:h-auto lg:aspect-[21/9]">
                     <img
                       src={s.image}
                       alt={s.alt}
@@ -51,17 +49,15 @@ const HeroSlider = () => {
             ))}
           </Swiper>
 
-          {/* Swiper 기본 네비/페이지네이션은 스타일이 CSS에 포함.
-              Tailwind로 위치만 살짝 보정 */}
           <style>
             {`
-            .swiper {
-              --swiper-navigation-color: #fb923c; /* orange-400 */
-              --swiper-pagination-color: #fb923c;
-            }
-            @media (max-width: 767px){
-              .swiper-button-prev, .swiper-button-next { display: none; }
-            }
+              .swiper {
+                --swiper-navigation-color: #fb923c; /* orange-400 */
+                --swiper-pagination-color: #fb923c;
+              }
+              @media (max-width: 767px) {
+                .swiper-button-prev, .swiper-button-next { display: none; }
+              }
             `}
           </style>
         </div>
@@ -87,7 +83,7 @@ const CouponSection = () => {
           {coupons.map((i) => (
             <li
               key={i}
-              className="w-[92%] xs:w-[300px] sm:w-[320px] bg-white/90 rounded-2xl shadow-lg ring-1 ring-black/[0.04] flex"
+              className="w-full xs:w-[300px] sm:w-[320px] bg-white/90 rounded-2xl shadow-lg ring-1 ring-black/[0.04] flex"
             >
               <div className="flex-1 px-4 py-4 sm:px-5 sm:py-5">
                 <span className="text-[11px] sm:text-xs text-[#b47937] font-bold">
@@ -138,7 +134,7 @@ const CouponSection = () => {
 };
 
 /* ===============================
-   Product Card (공용)
+   Product Card (재사용 가능한 공용 컴포넌트)
    =============================== */
 type Product = { id: number; name: string; price: number; image: string };
 
@@ -177,7 +173,7 @@ const ProductCard = ({ p }: { p: Product }) => {
 };
 
 /* ===============================
-   Best Seller
+   Best Seller Section
    =============================== */
 const BestSellerSection = () => {
   const mockProducts: Product[] = Array(10)
@@ -212,7 +208,7 @@ const BestSellerSection = () => {
 };
 
 /* ===============================
-   Video (반응형 16:9)
+   Video Section (16:9 반응형)
    =============================== */
 const VideoSection = () => {
   return (
@@ -240,7 +236,7 @@ const VideoSection = () => {
 };
 
 /* ===============================
-   New Items (탭은 구조만, 1→2→3→5단 그리드)
+   New Items (탭 기반 반응형 그리드)
    =============================== */
 const NewItemsSection = () => {
   const [activeTab, setActiveTab] = useState(0);
