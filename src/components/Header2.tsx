@@ -5,6 +5,7 @@ import MainNavigation from './MainNavigation';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
 
+
 const Header2 = () => {
   const location = useLocation();
   const navigate = useNavigate();

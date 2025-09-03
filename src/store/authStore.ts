@@ -36,9 +36,9 @@ export const useAuthStore = create<AuthState>()(
           try {
             const decoded: any = jwtDecode(accessToken)
             const userData: User = {
-              id: decoded.user_id,
-              username: decoded.username || "",
-              email: decoded.email || "",
+              id: user?.id,
+              username: user?.username || "",
+              email: user?.email || "",
               first_name: decoded.first_name,
               last_name: decoded.last_name,
               loginType: decoded.loginType || "normal",
