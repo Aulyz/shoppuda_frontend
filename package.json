@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@heroicons/react": "^2.0.18",
+    "@tailwindcss/line-clamp": "^0.4.4",
     "autoprefixer": "^10.4.16",
     "axios": "^1.6.2",
     "dayjs": "^1.11.10",
@@ -30,7 +31,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "prettier": "^3.1.0",
     "typescript": "^5.3.3",
-    "vite": "^5.0.6"
+    "vite": "^7.1.4"
   },
   "scripts": {
     "dev": "vite",

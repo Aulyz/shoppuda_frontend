@@ -23,6 +23,12 @@ export default {
       fontFamily: {
         'sans': ['Pretendard', 'system-ui', 'sans-serif'],
       },
+      screens: {
+        xs: "480px",
+      },
+      aspectRatio: {
+        '21/9': '21 / 9',
+      },
     },
   },
   plugins: [],

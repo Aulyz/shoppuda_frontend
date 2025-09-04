@@ -1,15 +1,25 @@
 import React from 'react';
 
+declare global {
+  interface Window {
+    Kakao: any;
+  }
+}
+
 interface KakaoLoginProps {
   onSuccess?: (data: { status: string }) => void;
   onFailure?: (error: Error) => void;
 }
 
 const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_APP_KEY;
-const KAKAO_REDIRECT_URI = 'http://localhost:3001/oauth/kakao/callback'; // URI 경로 수정
+const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://localhost:3000/oauth/kakao/callback';
 
 const KakaoLogin: React.FC<KakaoLoginProps> = ({ onFailure }) => {
   const handleLogin = () => {
+    console.log('카카오 로그인 시작');
+    console.log('사용할 리다이렉트 URI:', KAKAO_REDIRECT_URI);
+    console.log('현재 URL:', window.location.href);
+    console.log('앱 키:', import.meta.env.VITE_KAKAO_APP_KEY);
     try {
       if (!KAKAO_CLIENT_ID) {
         throw new Error('Kakao Client ID is not configured');
