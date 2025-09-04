@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 // Swiper
@@ -60,7 +59,6 @@ const HeroSlider = () => {
             `}
           </style>
         </div>
->>>>>>> origin/main
       </div>
     </section>
   );
@@ -307,7 +305,9 @@ export default function Home() {
   useEffect(() => {
     const prev = document.body.className;
     document.body.classList.add("bg-[#eeeeee]");
-    return () => (document.body.className = prev);
+    return () => {
+      document.body.className = prev;
+    };
   }, []);
 
   return (
