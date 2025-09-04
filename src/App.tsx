@@ -15,8 +15,6 @@ import QnA from './pages/QnA'
 import ProductsNew from './pages/ProductsNew'
 import ProductsSale from './pages/ProductsSale'
 import { useAuthStore } from './store/authStore'
-import LoginSuccess from "./pages/LoginSuccess"
-import api from './services/api'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,7 +38,6 @@ function KakaoAuthHandler() {
       const code = codeMatch ? decodeURIComponent(codeMatch[1]) : null;
 
       if (code) {
-        console.log('✅ 홈페이지에서 카카오 코드 발견:', code.substring(0, 20) + '...');
         try {
           // 1. 카카오 토큰 요청
           const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
@@ -51,7 +48,7 @@ function KakaoAuthHandler() {
             body: new URLSearchParams({
               grant_type: 'authorization_code',
               client_id: import.meta.env.VITE_KAKAO_APP_KEY,
-              redirect_uri: import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://localhost:3000/oauth/kakao/callback',
+              redirect_uri: 'http://localhost:3001/kakao/callback',
               code: code,
             }),
           });
@@ -113,18 +110,6 @@ function KakaoAuthHandler() {
 }
 
 function App() {
-  useEffect(() => {
-    const { isAuthenticated, user } = useAuthStore.getState()
-    if (isAuthenticated && !user) {
-      api.getProfile().then((profile) => {
-        useAuthStore.getState().login(
-          useAuthStore.getState().accessToken,
-          useAuthStore.getState().refreshToken,
-          profile
-        )
-      })
-    }
-  }, [])
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -142,11 +127,10 @@ function App() {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/qna" element={<QnA />} />
-            <Route path="/oauth/kakao/callback" element={<KakaoAuthHandler />} />
-            <Route path="/login/success" element={<LoginSuccess />} />
+            <Route path="/kakao/callback" element={<KakaoAuthHandler />} />
           </Routes>
         </Layout>
-        <Toaster
+        <Toaster 
           position="top-right"
           toastOptions={{
             duration: 3000,
