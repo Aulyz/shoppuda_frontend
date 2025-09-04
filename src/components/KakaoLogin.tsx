@@ -1,14 +1,14 @@
 import React from 'react';
 
 interface KakaoLoginProps {
-  onSuccess: (data: { status: string }) => void;
+  onSuccess?: (data: { status: string }) => void;
   onFailure?: (error: Error) => void;
 }
 
 const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_APP_KEY;
 const KAKAO_REDIRECT_URI = 'http://localhost:3001/oauth/kakao/callback'; // URI 경로 수정
 
-const KakaoLogin: React.FC<KakaoLoginProps> = ({ onSuccess, onFailure }) => {
+const KakaoLogin: React.FC<KakaoLoginProps> = ({ onFailure }) => {
   const handleLogin = () => {
     try {
       if (!KAKAO_CLIENT_ID) {
