@@ -30,6 +30,6 @@ function Layout({ children }: LayoutProps) {
       {!isAuthPage && <Footer />}
     </div>
   );
-}
+};
 
 export default Layout;
