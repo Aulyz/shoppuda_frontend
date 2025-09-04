@@ -1,13 +1,16 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import { jwtDecode } from 'jwt-decode'
+// src/store/authStore.ts
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
+import { jwtDecode } from "jwt-decode"
 
 interface User {
-  id: number
+  id?: number
   username: string
-  email: string
+  email?: string
   first_name?: string
   last_name?: string
+  type?: "CUSTOMER" | "STAFF" | "ADMIN"
+  loginType?: "normal" | "kakao"
 }
 
 interface AuthState {
@@ -15,7 +18,7 @@ interface AuthState {
   refreshToken: string | null
   user: User | null
   isAuthenticated: boolean
-  login: (accessToken: string, refreshToken: string) => void
+  login: (accessToken: string | null, refreshToken: string | null, user?: User) => void
   logout: () => void
   updateTokens: (accessToken: string, refreshToken: string) => void
 }
@@ -28,29 +31,43 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
 
-      login: (accessToken, refreshToken) => {
-        try {
-          const decoded: any = jwtDecode(accessToken)
-          const user: User = {
-            id: decoded.user_id,
-            username: decoded.username || '',
-            email: decoded.email || '',
-            first_name: decoded.first_name,
-            last_name: decoded.last_name,
+      login: (accessToken, refreshToken, user) => {
+        if (accessToken && refreshToken) {
+          try {
+            const decoded: any = jwtDecode(accessToken)
+            const userData: User = {
+              id: user?.id,
+              username: user?.username || "",
+              email: user?.email || "",
+              first_name: decoded.first_name,
+              last_name: decoded.last_name,
+              loginType: decoded.loginType || "normal",
+            }
+
+            set({
+              accessToken,
+              refreshToken,
+              user: userData,
+              isAuthenticated: true,
+            })
+          } catch (error) {
+            console.error("Error decoding token:", error)
           }
-          
+        } else if (user) {
+          // 토큰 기반이 아닌 경우
           set({
-            accessToken,
-            refreshToken,
+            accessToken: null,
+            refreshToken: null,
             user,
             isAuthenticated: true,
           })
-        } catch (error) {
-          console.error('Error decoding token:', error)
         }
       },
 
       logout: () => {
+        localStorage.removeItem("kakao_access_token")
+        localStorage.removeItem("kakao_refresh_token")
+
         set({
           accessToken: null,
           refreshToken: null,
@@ -64,7 +81,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage", // localStorage key
     }
   )
 )

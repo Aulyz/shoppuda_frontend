@@ -2,6 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .dropdown-menu {
+    @apply absolute right-0 mt-1 w-48 origin-top-right rounded-xl bg-white py-2 shadow-xl ring-1 ring-black ring-opacity-5 transition-all duration-300 ease-out transform backdrop-blur-sm;
+  }
+  
+  .dropdown-item {
+    @apply block px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-pink-50 hover:text-orange-800 transition-all duration-200 rounded-lg mx-2;
+  }
+  
+  .nav-link {
+    @apply hover:text-orange-600 transition-all duration-200 hover:scale-105;
+  }
+  
+  .container-max {
+    @apply max-w-screen-xl mx-auto px-4;
+  }
+  
+  .brand-font {
+    font-family: 'Playfair Display', serif;
+  }
+  
+  /* 부드러운 디자인을 위한 새로운 클래스들 */
+  .soft-card {
+    @apply bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
+  }
+  
+  .soft-button {
+    @apply bg-gradient-to-r from-orange-400 to-pink-400 hover:from-orange-500 hover:to-pink-500 text-white px-6 py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+  }
+  
+  .soft-button-outline {
+    @apply border-2 border-orange-300 text-orange-600 hover:bg-orange-50 px-6 py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105;
+  }
+  
+  .soft-section {
+    @apply py-16 px-4 bg-gradient-to-br from-orange-50 via-white to-pink-50;
+  }
+  
+  .soft-title {
+    @apply text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent;
+  }
+  
+  .soft-subtitle {
+    @apply text-gray-600 text-lg leading-relaxed;
+  }
+  
+  .soft-overlay {
+    @apply absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 hover:opacity-100 transition-all duration-300 rounded-2xl;
+  }
+}
+
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
