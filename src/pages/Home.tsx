@@ -1,125 +1,129 @@
-import { Link } from 'react-router-dom';
-//import { useQuery } from 'react-query';
-//import { api } from '../services/api';
-// Swiper의 React 컴포넌트와 필요한 스타일, 모듈 임포트
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css'; // 기본 Swiper 스타일
-import 'swiper/css/navigation'; // Navigation 모듈 스타일 (선택)
-import 'swiper/css/pagination'; // Pagination 모듈 스타일 (선택)
-import { Navigation, Pagination, Autoplay } from 'swiper/modules'; // 사용할 Swiper 모듈들
+import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
-// 이미지 슬라이더 컴포넌트 (Swiper.js 사용)
+// Swiper
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
+
+/* ===============================
+   Hero Slider (완전 반응형)
+   =============================== */
 const HeroSlider = () => {
-  // 슬라이드에 사용할 이미지 목록 (실제 이미지 경로로 교체 필요)
   const slides = [
-    { id: 1, image: '/Images/b2.jpg', alt: 'Banner 1' },
-    { id: 2, image: '/Images/banner2.jpg', alt: 'Banner 2' }, // 예시 이미지
-    { id: 3, image: '/Images/banner3.jpg', alt: 'Banner 3' }, // 예시 이미지
-    //이미지 추가 가능
-  ];  
+    { id: 1, image: "/Images/b2.jpg", alt: "메인 배너 1" },
+    { id: 2, image: "/Images/banner2.jpg", alt: "메인 배너 2" },
+    { id: 3, image: "/Images/banner3.jpg", alt: "메인 배너 3" },
+  ];
 
   return (
-    <section className="flex-grow flex w-full bg-gradient-to-br from-orange-50 via-white to-pink-50 h-auto">
-      {/* Swiper 컴포넌트 사용 */}
-      <Swiper
-        modules={[Navigation, Pagination, Autoplay]} // 사용할 모듈들
-        spaceBetween={0} // 슬라이드 간 간격
-        slidesPerView={1} // 한 번에 보여줄 슬라이드 수
-        loop={true} // 무한 루프
-        autoplay={{ // 자동 재생 설정 (선택)
-          delay: 5000, // 5초마다 슬라이드 변경
-          disableOnInteraction: false, // 사용자 상호작용 후에도 자동 재생 계속
-        }}
-        navigation={true} // Navigation 화살표 표시 (선택)
-        pagination={{ // Pagination 표시 (선택)
-          clickable: true, // 페이지네이션 버튼 클릭 가능
-        }}
-        className="w-full" // Swiper 컨테이너 스타일
-      >
-        {slides.map((slide) => (
-          <SwiperSlide key={slide.id}>
-            <div className="w-full flex justify-center items-start bg-gradient-to-br from-orange-100/30 via-white to-pink-100/30 relative">
-              <div className="flex justify-center items-start w-full">
-                <img src={slide.image} alt={slide.alt} className="w-full h-auto object-contain drop-shadow-2xl rounded-2xl" />
-              </div>
-            </div>
-          </SwiperSlide>
-        ))}
-      </Swiper>
-    </section>
-  );
-};
+    <section className="w-full bg-gradient-to-br from-orange-50 via-white to-pink-50">
+      <div className="container-max px-0 sm:px-2 md:px-4">
+        <div className="relative w-full overflow-hidden rounded-none sm:rounded-2xl">
+          <Swiper
+            modules={[Navigation, Pagination, Autoplay]}
+            slidesPerView={1}
+            loop
+            autoplay={{ delay: 5000, disableOnInteraction: false }}
+            navigation={{ enabled: window.innerWidth >= 768 }} // 모바일에서는 네비게이션 비활성화
+            pagination={{ clickable: true }}
+            className="w-full"
+          >
+            {slides.map((s) => (
+              <SwiperSlide key={s.id}>
+                <div className="w-full">
+                  {/* 모바일: 고정 높이, 태블릿: 큰 높이, 데스크탑: 21:9 비율 */}
+                  <div className="w-full h-48 xs:h-52 sm:h-60 md:h-72 lg:h-auto lg:aspect-[21/9]">
+                    <img
+                      src={s.image}
+                      alt={s.alt}
+                      loading="eager"
+                      className="w-full h-full object-cover select-none"
+                      draggable={false}
+                    />
+                  </div>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
 
-// 쿠폰 섹션 컴포넌트
-const CouponSection = () => {
-  // TODO: 사용자 이름을 상태나 props에서 가져오기
-  const userName = "박민우";
-  return (
-    <section className="w-full soft-section py-12 flex flex-col items-center mt-10 mb-10">
-      <h2 className="soft-title text-center mb-4">{userName} 님을 위한 혜택</h2>
-      <ul className="flex flex-wrap justify-center gap-6 w-full max-w-5xl mx-auto py-6">
-        {/* 쿠폰 아이템 반복 (예시 3개) */}
-        {[1, 2, 3].map((item) => (
-          <li key={item} className="inline-block list-none soft-card w-[300px] min-h-[120px] relative flex">
-            <div className="flex flex-col justify-center px-4 py-5 w-[70%]">
-              <span className="text-xs text-[#b47937] font-bold mb-1">SHOPPUDA</span>
-              <span className="text-3xl font-bold text-[#222] mb-1">
-                1,000<span className="text-xl font-normal">원</span>
-              </span>
-              <span className="text-xs text-gray-500 block truncate">
-                VIP 단골고객 할인쿠폰
-              </span>
-            </div>
-            <div className="w-[1px] border-l border-dashed border-gray-300 my-2"></div>
-            <div className="flex flex-col justify-center items-center w-[30%]">
-              <button className="soft-button-outline flex flex-col items-center gap-2 px-4 py-2">
-                <i className="fa-solid fa-download text-lg"></i>
-                <span className="text-xs font-semibold">다운로드</span>
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-};
-
-// 베스트 셀러 섹션 컴포넌트 - 비율 및 크기 신상품 섹션과 통일
-const BestSellerSection = () => {
-  // TODO: 실제 베스트 셀러 데이터를 API에서 가져오기
-  const mockProducts = Array(5).fill(null).map((_, i) => ({
-    id: i + 1,
-    name: "Test용 문구 상품입니다",
-    price: 12000,
-    image: "//ecimg.cafe24img.com/pg2160b96498953088/seoa0413/web/product/medium/20250819/dc52e36d4287a69cc69ae0dd5b6e9117.jpg"
-  }));
-
-  return (
-    <section className="soft-section">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-700 mb-2 tracking-wide">BEST SELLER</h2>
-        <p className="text-gray-400 text-base">쇼프다 고객님들께 인정받은 추천 상품 !</p>
+          <style>
+            {`
+              .swiper {
+                --swiper-navigation-color: #fb923c; /* orange-400 */
+                --swiper-pagination-color: #fb923c;
+              }
+              @media (max-width: 767px) {
+                .swiper-button-prev, .swiper-button-next { display: none; }
+              }
+            `}
+          </style>
+        </div>
       </div>
-      <div className="max-w-screen-xl mx-auto px-4 py-8">
-        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-10 gap-y-16">
-          {mockProducts.map((product) => (
+    </section>
+  );
+};
+
+/* ===============================
+   Coupon Section (반응형 카드)
+   =============================== */
+const CouponSection = () => {
+  const userName = "박민우";
+  const coupons = [1, 2, 3];
+
+  return (
+    <section className="w-full py-10 sm:py-12 md:py-14">
+      <div className="container-max">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-700 text-center">
+          {userName} 님을 위한 혜택
+        </h2>
+        <ul className="mt-6 sm:mt-8 flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
+          {coupons.map((i) => (
             <li
-              key={product.id}
-              className="w-full max-w-[270px] flex flex-col items-center shadow-xl rounded-2xl bg-white/90 transition-transform duration-200 hover:scale-105"
+              key={i}
+              className="w-full xs:w-[300px] sm:w-[320px] bg-white/90 rounded-2xl shadow-lg ring-1 ring-black/[0.04] flex"
             >
-              <div className="relative w-full aspect-square overflow-hidden mb-4 rounded-t-2xl">
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex space-x-2 pointer-events-none">
-                  <button className="bg-white/70 text-gray-700 text-xs font-semibold px-3 py-1 rounded shadow pointer-events-auto">WISH</button>
-                  <button className="bg-white/70 text-gray-700 text-xs font-semibold px-3 py-1 rounded shadow pointer-events-auto">ADD</button>
+              <div className="flex-1 px-4 py-4 sm:px-5 sm:py-5">
+                <span className="text-[11px] sm:text-xs text-[#b47937] font-bold">
+                  SHOPPUDA
+                </span>
+                <div className="mt-1">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                    1,000
+                  </span>
+                  <span className="ml-1 text-sm sm:text-base text-gray-700">
+                    원
+                  </span>
                 </div>
-                <div className="absolute left-2 bottom-2 text-[10px] text-white bg-black bg-opacity-40 px-1 rounded select-none">
-                  실제 판매되지 않는 상품입니다
-                </div>
+                <span className="block mt-1 text-[11px] sm:text-xs text-gray-500">
+                  VIP 단골고객 할인쿠폰
+                </span>
               </div>
-              <div className="w-full text-left px-3 pb-4">
-                <div className="text-gray-900 text-base font-semibold mb-1">{product.name}</div>
-                <div className="font-bold text-black text-lg">{product.price.toLocaleString()}원</div>
+              <div className="my-3 w-px bg-gray-200/80" />
+              <div className="w-28 sm:w-32 flex items-center justify-center">
+                <button
+                  className="inline-flex flex-col items-center gap-1 px-3 py-2 rounded-xl border border-orange-300/70 text-orange-600 hover:bg-orange-50 text-xs font-semibold transition"
+                  aria-label="쿠폰 다운로드"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      fill="none"
+                    />
+                  </svg>
+                  <span>다운로드</span>
+                </button>
               </div>
             </li>
           ))}
@@ -129,111 +133,190 @@ const BestSellerSection = () => {
   );
 };
 
-// 유튜브 비디오 섹션 컴포넌트
+/* ===============================
+   Product Card (재사용 가능한 공용 컴포넌트)
+   =============================== */
+type Product = { id: number; name: string; price: number; image: string };
+
+const ProductCard = ({ p }: { p: Product }) => {
+  return (
+    <li className="w-full max-w-[320px] mx-auto bg-white rounded-2xl shadow-md hover:shadow-lg transition overflow-hidden">
+      <div className="relative w-full aspect-square">
+        <img
+          src={p.image}
+          alt={p.name}
+          loading="lazy"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 hidden md:flex items-center justify-center gap-2 opacity-0 hover:opacity-100 transition">
+          <button className="bg-white/80 backdrop-blur px-3 py-1 rounded text-xs font-semibold">
+            WISH
+          </button>
+          <button className="bg-white/80 backdrop-blur px-3 py-1 rounded text-xs font-semibold">
+            ADD
+          </button>
+        </div>
+        <div className="absolute left-2 bottom-2 text-[10px] text-white bg-black/40 px-1 rounded select-none">
+          실제 판매되지 않는 상품입니다
+        </div>
+      </div>
+      <div className="px-3 sm:px-4 py-3">
+        <div className="text-sm sm:text-[15px] font-semibold text-gray-900 line-clamp-2">
+          {p.name}
+        </div>
+        <div className="mt-1 text-base sm:text-lg font-extrabold">
+          {p.price.toLocaleString()}원
+        </div>
+      </div>
+    </li>
+  );
+};
+
+/* ===============================
+   Best Seller Section
+   =============================== */
+const BestSellerSection = () => {
+  const mockProducts: Product[] = Array(10)
+    .fill(null)
+    .map((_, i) => ({
+      id: i + 1,
+      name: "Test용 문구 상품입니다",
+      price: 12000,
+      image:
+        "//ecimg.cafe24img.com/pg2160b96498953088/seoa0413/web/product/medium/20250819/dc52e36d4287a69cc69ae0dd5b6e9117.jpg",
+    }));
+
+  return (
+    <section className="py-10 sm:py-12 md:py-14">
+      <div className="container-max px-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-xl md:text-3xl font-extrabold text-gray-700 tracking-wide">
+            BEST SELLER
+          </h2>
+          <p className="mt-2 text-gray-400 text-sm md:text-base">
+            쇼프다 고객님들께 인정받은 추천 상품 !
+          </p>
+        </div>
+        <ul className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 sm:gap-6 md:gap-8">
+          {mockProducts.slice(0, 5).map((p) => (
+            <ProductCard key={p.id} p={p} />
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+};
+
+/* ===============================
+   Video Section (16:9 반응형)
+   =============================== */
 const VideoSection = () => {
   return (
-    <section className="py-20 bg-gradient-to-r from-orange-50 via-white to-pink-50">
-      <div className="max-w-screen-lg mx-auto flex flex-col items-center">
-        <h2 className="soft-title text-center mb-4">오직 쇼프다에서만 !</h2>
-        <p className="soft-subtitle text-center mb-12">해외가 가까워지는 순간, 쇼프다를 위한 영상</p>
-        <div className="w-full max-w-3xl mx-auto">
-          {/* TODO: video 태그의 src와 poster를 실제 경로로 변경 */}
-          <video
-            src="https://m-img.cafe24.com/images/ec/sde/video/luminous_1366x720.mp4  "
-            controls
-            className="w-full h-auto rounded-2xl bg-black shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:scale-105"
-            poster=""
-          ></video>
+    <section className="py-12 sm:py-14 md:py-16 bg-gradient-to-r from-orange-50 via-white to-pink-50">
+      <div className="container-max px-4">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-700 text-center">
+          오직 쇼프다에서만 !
+        </h2>
+        <p className="text-gray-400 text-sm md:text-base text-center mt-2">
+          해외가 가까워지는 순간, 쇼프다를 위한 영상
+        </p>
+        <div className="mt-6 sm:mt-8 max-w-3xl mx-auto">
+          <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-xl">
+            <video
+              src="https://m-img.cafe24.com/images/ec/sde/video/luminous_1366x720.mp4"
+              controls
+              className="w-full h-full"
+              preload="metadata"
+            />
+          </div>
         </div>
       </div>
     </section>
   );
 };
 
-// 신상품 섹션 컴포넌트 (탭 네비게이션 포함)
+/* ===============================
+   New Items (탭 기반 반응형 그리드)
+   =============================== */
 const NewItemsSection = () => {
-  // TODO: 실제 신상품 데이터와 탭 로직 구현
-  const mockNewProducts = Array(5).fill(null).map((_, i) => ({
-    id: i + 1,
-    name: "클라리엘 딥클린 세탁세제",
-    price: 12000,
-    image: "//ecimg.cafe24img.com/pg2160b96498953088/seoa0413/web/product/medium/20250819/dc52e36d4287a69cc69ae0dd5b6e9117.jpg"
-  }));
+  const [activeTab, setActiveTab] = useState(0);
+  const tabs = ["새로운 카테고리 1", "새로운 카테고리 2", "새로운 카테고리 3", "새로운 카테고리 4"];
+
+  const mockNewProducts: Product[] = Array(10)
+    .fill(null)
+    .map((_, i) => ({
+      id: i + 1,
+      name: "클라리엘 딥클린 세탁세제",
+      price: 12000,
+      image:
+        "//ecimg.cafe24img.com/pg2160b96498953088/seoa0413/web/product/medium/20250819/dc52e36d4287a69cc69ae0dd5b6e9117.jpg",
+    }));
 
   return (
-    <section className="soft-section">
-      <div className="max-w-screen-xl mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-700 mb-1">New</h2>
-          <p className="text-gray-400 text-sm">쇼프다의 새로운 상품을 만나보세요</p>
+    <section className="py-10 sm:py-12 md:py-14">
+      <div className="container-max px-4">
+        <div className="text-center">
+          <h2 className="text-xl md:text-2xl font-extrabold text-gray-700">
+            New
+          </h2>
+          <p className="text-gray-400 text-sm md:text-base mt-1">
+            쇼프다의 새로운 상품을 만나보세요
+          </p>
         </div>
-        {/* 탭 네비게이션 (간단한 예시, 실제 구현 시 상태 관리 필요) */}
-        <ul className="flex space-x-6 border-b border-gray-200 items-center flex justify-center mb-8" role="tablist">
-          {['새로운 카테고리 1', '새로운 카테고리 2', '새로운 카테고리 3', '새로운 카테고리 4'].map((category, index) => (
-            <li key={index} role="presentation">
-              <button
-                type="button"
-                className={`pb-2 border-b-2 ${index === 0 ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-900'} font-semibold focus:outline-none`}
-                // onClick={() => setActiveTab(index)} // 상태 변경 로직 필요
-                role="tab"
-                aria-selected={index === 0}
-                // aria-controls={`tabContent${index + 1}`}
-                // id={`tab${index + 1}`}
-              >
-                {category}
-              </button>
-            </li>
+
+        {/* Tabs */}
+        <ul
+          className="mt-6 sm:mt-8 flex flex-wrap justify-center gap-3 sm:gap-5 border-b border-gray-200 pb-3"
+          role="tablist"
+        >
+          {tabs.map((t, idx) => {
+            const active = idx === activeTab;
+            return (
+              <li key={t} role="presentation">
+                <button
+                  type="button"
+                  className={`px-2 sm:px-3 pb-2 border-b-2 text-sm sm:text-base font-semibold transition
+                    ${active ? "border-orange-500 text-orange-600" : "border-transparent text-gray-500 hover:text-gray-900"}`}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setActiveTab(idx)}
+                >
+                  {t}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Grid */}
+        <ul className="mt-6 sm:mt-8 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 sm:gap-6 md:gap-8">
+          {mockNewProducts.slice(0, 5).map((p) => (
+            <ProductCard key={p.id} p={p} />
           ))}
         </ul>
-        <div className="max-w-screen-xl mx-auto px-4 py-8">
-          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-12">
-            {mockNewProducts.map((product) => (
-              <li key={product.id} className="w-full max-w-xs flex flex-col items-center">
-                <div className="relative w-full aspect-square overflow-hidden mb-4">
-                  <Link to="#" className="block">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                  </Link>
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex space-x-2 pointer-events-none">
-                    <button className="bg-white/70 text-gray-700 text-xs font-semibold px-3 py-1 rounded shadow pointer-events-auto">WISH</button>
-                    <button className="bg-white/70 text-gray-700 text-xs font-semibold px-3 py-1 rounded shadow pointer-events-auto">ADD</button>
-                  </div>
-                  <div className="absolute left-2 bottom-2 text-[10px] text-white bg-black bg-opacity-40 px-1 rounded select-none">
-                    실제 판매되지 않는 상품입니다
-                  </div>
-                </div>
-                <div className="w-full text-left">
-                  <Link to="#" className="block text-gray-900 text-sm mb-1">{product.name}</Link>
-                  <p className="font-bold text-black text-base">{product.price.toLocaleString()}원</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
     </section>
   );
 };
 
-// 메인 Home 컴포넌트
-function Home() {
-  // 기존의 추천 상품 로직은 유지하거나 제거 가능
-  // const { data: featuredProducts, isLoading } = useQuery(...)
+/* ===============================
+   Home (페이지 조립)
+   =============================== */
+export default function Home() {
+  // body 배경 느낌을 섹션별 배경과 합쳐 자연스럽게
+  useEffect(() => {
+    const prev = document.body.className;
+    document.body.classList.add("bg-[#eeeeee]");
+    return () => (document.body.className = prev);
+  }, []);
 
   return (
-    <div className="bg-[#eeeeee]"> {/* body 태그의 클래스를 여기에 적용 */}
+    <div className="min-h-screen">
       <HeroSlider />
       <CouponSection />
       <BestSellerSection />
       <VideoSection />
       <NewItemsSection />
-      {/* 기존의 featuredProducts, Categories 섹션은 제거하거나 수정 */}
     </div>
   );
 }
-
-export default Home;
