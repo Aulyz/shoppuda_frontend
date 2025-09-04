@@ -33,20 +33,13 @@ function KakaoAuthHandler() {
 
   useEffect(() => {
     const handleKakaoAuth = async () => {
-      console.log('=== KakaoAuthHandler 실행됨 ===');
-      console.log('현재 URL:', window.location.href);
-
-      // URL에서 코드 확인
       const fullUrl = window.location.href;
       const codeMatch = fullUrl.match(/[?&]code=([^&]+)/);
       const code = codeMatch ? decodeURIComponent(codeMatch[1]) : null;
 
       if (code) {
-        console.log('✅ 홈페이지에서 카카오 코드 발견:', code.substring(0, 20) + '...');
-        
         try {
-          // 카카오에서 토큰 요청
-          console.log('토큰 교환 시도...');
+          // 1. 카카오 토큰 요청
           const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
             method: 'POST',
             headers: {
@@ -55,68 +48,57 @@ function KakaoAuthHandler() {
             body: new URLSearchParams({
               grant_type: 'authorization_code',
               client_id: import.meta.env.VITE_KAKAO_APP_KEY,
-              redirect_uri: 'http://localhost:3001',
+              redirect_uri: 'http://localhost:3001/oauth/kakao/callback',
               code: code,
             }),
           });
 
-          if (tokenResponse.ok) {
-            const tokenData = await tokenResponse.json();
-            console.log('토큰 교환 성공:', tokenData);
-
-            // 카카오 SDK 초기화 및 사용자 정보 요청
-            if (window.Kakao && !window.Kakao.isInitialized()) {
-              window.Kakao.init(import.meta.env.VITE_KAKAO_APP_KEY);
-            }
-
-            if (window.Kakao && tokenData.access_token) {
-              window.Kakao.Auth.setAccessToken(tokenData.access_token);
-              
-              try {
-                // SDK 2.x에서는 Promise 방식으로 API 호출
-                const profileResponse = await window.Kakao.API.request({
-                  url: '/v2/user/me'
-                });
-                
-                console.log('사용자 정보 요청 성공:', profileResponse);
-                
-                // localStorage에 토큰 저장
-                localStorage.setItem('kakao_access_token', tokenData.access_token);
-                if (tokenData.refresh_token) {
-                  localStorage.setItem('kakao_refresh_token', tokenData.refresh_token);
-                }
-                
-                // 사용자 정보로 로그인 처리
-                const profile = profileResponse;
-                const kakaoAccount = profile.kakao_account;
-                const profileInfo = kakaoAccount?.profile;
-                
-                const kakaoUser = {
-                  id: profile.id,
-                  username: profileInfo?.nickname || `kakao_${profile.id}`,
-                  email: kakaoAccount?.email || '',
-                  first_name: profileInfo?.nickname || '',
-                  type: 'CUSTOMER' as const,
-                  loginType: 'kakao' as const
-                };
-                
-                console.log('로그인 처리:', kakaoUser);
-                login(null, null, kakaoUser);
-                
-                // URL 정리하고 홈으로 이동
-                window.history.replaceState({}, document.title, '/');
-                console.log('✅ 카카오 로그인 완료!');
-                
-              } catch (apiError) {
-                console.error('카카오 사용자 정보 요청 실패:', apiError);
-              }
-            }
-          } else {
-            const errorData = await tokenResponse.json();
-            console.error('토큰 요청 실패:', errorData);
+          if (!tokenResponse.ok) {
+            throw new Error('Failed to get Kakao token');
           }
+
+          const tokenData = await tokenResponse.json();
+
+          // 2. 카카오 사용자 정보 요청
+          const userResponse = await fetch('https://kapi.kakao.com/v2/user/me', {
+            headers: {
+              Authorization: `Bearer ${tokenData.access_token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!userResponse.ok) {
+            throw new Error('Failed to get Kakao user info');
+          }
+
+          const userData = await userResponse.json();
+
+          // 3. 백엔드로 전송할 사용자 데이터 구성
+          const kakaoUser = {
+            id: userData.id,
+            username: userData.kakao_account?.profile?.nickname || `user${userData.id}`,
+            email: userData.kakao_account?.email || '',
+            profileImage: userData.kakao_account?.profile?.profile_image_url,
+            type: "CUSTOMER" as "CUSTOMER",
+            loginType: "kakao" as "kakao"
+          };
+
+          // 4. 로그인 처리
+          login(null, null, kakaoUser);
+          
+          // 5. 토큰 저장
+          localStorage.setItem('kakao_access_token', tokenData.access_token);
+          if (tokenData.refresh_token) {
+            localStorage.setItem('kakao_refresh_token', tokenData.refresh_token);
+          }
+
+          // 6. 홈으로 리다이렉트
+          navigate('/');
+          window.history.replaceState({}, document.title, '/');
+
         } catch (error) {
-          console.error('카카오 로그인 처리 중 오류:', error);
+          console.error('Kakao login error:', error);
+          navigate('/login');
         }
       }
     };
@@ -131,7 +113,6 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <KakaoAuthHandler />
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -146,6 +127,7 @@ function App() {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/qna" element={<QnA />} />
+            <Route path="/oauth/kakao/callback" element={<KakaoAuthHandler />} />
           </Routes>
         </Layout>
         <Toaster 

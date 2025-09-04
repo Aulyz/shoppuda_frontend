@@ -16,7 +16,7 @@ function ProductsBest() {
   const sort = searchParams.get('sort') || '-sales_count'
   const page = parseInt(searchParams.get('page') || '1')
 
-  // 쇼프다 인기 상품 데이터 패칭
+  // 샵푸다 인기 상품 데이터 패칭
   const { data: bestData, isLoading: isBestLoading } = useQuery(
     ['products-best', sort, page],
     () => api.getProducts({ ordering: sort, page })
@@ -72,11 +72,11 @@ function ProductsBest() {
           </div>
         </div>
 
-        {/* 쇼프다 인기 상품 섹션 */}
+        {/* 샵푸다 인기 상품 섹션 */}
         <section className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 mb-16">
           <div className="flex items-center gap-2 mb-6">
             <FireIcon className="w-7 h-7 text-red-500" />
-            <h2 className="text-2xl font-bold text-gray-900">쇼프다 인기 상품</h2>
+            <h2 className="text-2xl font-bold text-gray-900">샵푸다 인기 상품</h2>
           </div>
           {isBestLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore'; // 상단에 추가
 //import { useQuery } from 'react-query';
 //import { api } from '../services/api';
 // Swiper의 React 컴포넌트와 필요한 스타일, 모듈 임포트
@@ -52,8 +53,9 @@ const HeroSlider = () => {
 
 // 쿠폰 섹션 컴포넌트
 const CouponSection = () => {
-  // TODO: 사용자 이름을 상태나 props에서 가져오기
-  const userName = "박민우";
+  const { user } = useAuthStore();
+  const userName = user ? user.username : '고객';
+
   return (
     <section className="w-full soft-section py-12 flex flex-col items-center mt-10 mb-10">
       <h2 className="soft-title text-center mb-4">{userName} 님을 위한 혜택</h2>
@@ -62,7 +64,7 @@ const CouponSection = () => {
         {[1, 2, 3].map((item) => (
           <li key={item} className="inline-block list-none soft-card w-[300px] min-h-[120px] relative flex">
             <div className="flex flex-col justify-center px-4 py-5 w-[70%]">
-              <span className="text-xs text-[#b47937] font-bold mb-1">SHOPPUDA</span>
+              <span className="text-xs text-[#b47937] font-bold mb-1">SHAMPUDA</span>
               <span className="text-3xl font-bold text-[#222] mb-1">
                 1,000<span className="text-xl font-normal">원</span>
               </span>
@@ -98,7 +100,7 @@ const BestSellerSection = () => {
     <section className="soft-section">
       <div className="text-center mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-700 mb-2 tracking-wide">BEST SELLER</h2>
-        <p className="text-gray-400 text-base">쇼프다 고객님들께 인정받은 추천 상품 !</p>
+        <p className="text-gray-400 text-base">샵푸다 고객님들께 인정받은 추천 상품 !</p>
       </div>
       <div className="max-w-screen-xl mx-auto px-4 py-8">
         <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-10 gap-y-16">
@@ -134,8 +136,8 @@ const VideoSection = () => {
   return (
     <section className="py-20 bg-gradient-to-r from-orange-50 via-white to-pink-50">
       <div className="max-w-screen-lg mx-auto flex flex-col items-center">
-        <h2 className="soft-title text-center mb-4">오직 쇼프다에서만 !</h2>
-        <p className="soft-subtitle text-center mb-12">해외가 가까워지는 순간, 쇼프다를 위한 영상</p>
+        <h2 className="soft-title text-center mb-4">오직 샵푸다에서만 !</h2>
+        <p className="soft-subtitle text-center mb-12">해외가 가까워지는 순간, 샵푸다를 위한 영상</p>
         <div className="w-full max-w-3xl mx-auto">
           {/* TODO: video 태그의 src와 poster를 실제 경로로 변경 */}
           <video
@@ -165,7 +167,7 @@ const NewItemsSection = () => {
       <div className="max-w-screen-xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-xl md:text-2xl font-bold text-gray-700 mb-1">New</h2>
-          <p className="text-gray-400 text-sm">쇼프다의 새로운 상품을 만나보세요</p>
+          <p className="text-gray-400 text-sm">샵푸다의 새로운 상품을 만나보세요</p>
         </div>
         {/* 탭 네비게이션 (간단한 예시, 실제 구현 시 상태 관리 필요) */}
         <ul className="flex space-x-6 border-b border-gray-200 items-center flex justify-center mb-8" role="tablist">

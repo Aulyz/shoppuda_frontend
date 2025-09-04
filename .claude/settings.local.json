@@ -11,7 +11,9 @@
       "Bash(npx tsc:*)",
       "Bash(curl:*)",
       "Read(C:\\Users\\Ryul8\\Desktop\\screen/**)",
-      "Read(C:\\Users\\Ryul8\\Desktop\\screen/**)"
+      "Read(C:\\Users\\Ryul8\\Desktop\\screen/**)",
+      "Bash(git fetch:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

@@ -298,7 +298,7 @@ function SignUp() {
               </svg>
             </div>
             <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-2">회원가입</h2>
-            <p className="text-gray-500 text-sm">쇼프다에 오신 것을 환영합니다</p>
+            <p className="text-gray-500 text-sm">샵푸다에 오신 것을 환영합니다</p>
           </div>
 
           {/* 스텝 인디케이터 */}
@@ -669,7 +669,7 @@ function SignUp() {
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               <div className="text-sm text-gray-700 space-y-4">
                 <h4 className="font-semibold">제1조 (목적)</h4>
-                <p>이 약관은 쇼프다(이하 &apos;회사&apos;)가 제공하는 온라인 쇼핑몰 서비스의 이용과 관련하여 회사와 이용자의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.</p>
+                <p>이 약관은 샵푸다(이하 &apos;회사&apos;)가 제공하는 온라인 쇼핑몰 서비스의 이용과 관련하여 회사와 이용자의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.</p>
                 
                 <h4 className="font-semibold">제2조 (정의)</h4>
                 <p>이 약관에서 사용하는 용어의 정의는 다음과 같습니다.</p>
@@ -727,7 +727,7 @@ function SignUp() {
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               <div className="text-sm text-gray-700 space-y-4">
                 <h4 className="font-semibold">제1조 (개인정보의 처리 목적)</h4>
-                <p>쇼프다(이하 &apos;회사&apos;)는 다음의 목적을 위하여 개인정보를 처리합니다.</p>
+                <p>샵푸다(이하 &apos;회사&apos;)는 다음의 목적을 위하여 개인정보를 처리합니다.</p>
                 <ul className="list-disc list-inside space-y-1 ml-4">
                   <li>회원가입 및 관리</li>
                   <li>서비스 제공 및 계약이행</li>
