@@ -1,13 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import BannerNotification from "./BannerNotification";
 import MainNavigation from "./MainNavigation";
 import { useAuthStore } from "../store/authStore";
 import { api } from "../services/api";
 
 const Header2 = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthStore();
 
@@ -30,14 +29,8 @@ const Header2 = () => {
     }
   };
 
-  const isHomePage = location.pathname === "/";
-
   return (
-    <header
-      className={`${
-        isHomePage ? "absolute top-0 left-0 right-0" : ""
-      } bg-white/95 backdrop-blur-md border-b border-orange-100 z-50 shadow-sm`}
-    >
+    <header className="bg-white/95 backdrop-blur-md border-b border-orange-100 z-50 shadow-sm flex-shrink-0 w-full">
       {/* 상단 배너 */}
       <BannerNotification />
 

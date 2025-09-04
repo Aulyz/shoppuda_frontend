@@ -12,15 +12,15 @@ import { Navigation, Pagination, Autoplay } from "swiper/modules";
    =============================== */
 const HeroSlider = () => {
   const slides = [
-    { id: 1, image: "/Images/b2.jpg", alt: "메인 배너 1" },
+    { id: 1, image: "/Images/home_banner1.png", alt: "메인 배너 1" },
     { id: 2, image: "/Images/banner2.jpg", alt: "메인 배너 2" },
     { id: 3, image: "/Images/banner3.jpg", alt: "메인 배너 3" },
   ];
 
   return (
     <section className="w-full bg-gradient-to-br from-orange-50 via-white to-pink-50">
-      <div className="container-max px-0 sm:px-2 md:px-4">
-        <div className="relative w-full overflow-hidden rounded-none sm:rounded-2xl">
+      <div className="w-full px-0">
+        <div className="relative w-full overflow-hidden">
           <Swiper
             modules={[Navigation, Pagination, Autoplay]}
             slidesPerView={1}
