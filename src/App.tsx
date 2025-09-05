@@ -15,6 +15,7 @@ import QnA from './pages/QnA'
 import ProductsNew from './pages/ProductsNew'
 import ProductsSale from './pages/ProductsSale'
 import { useAuthStore } from './store/authStore'
+import LoginSuccess from './pages/LoginSuccess'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -128,6 +129,7 @@ function App() {
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/qna" element={<QnA />} />
             <Route path="/kakao/callback" element={<KakaoAuthHandler />} />
+            <Route path="/login/success" element={<LoginSuccess />} />
           </Routes>
         </Layout>
         <Toaster 

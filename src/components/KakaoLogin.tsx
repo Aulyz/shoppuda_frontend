@@ -25,7 +25,7 @@ const KakaoLogin: React.FC<KakaoLoginProps> = ({ onFailure }) => {
         throw new Error('Kakao Client ID is not configured');
       }
 
-      // 카카오 인증 URL 생성
+      // 카카오 인증 URL 생성 
       const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code`;
 
       // 페이지 이동
