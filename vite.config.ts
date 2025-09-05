@@ -18,12 +18,12 @@ export default defineConfig({
     ],
     proxy: {
       '/api': {
-        target: 'http://shoppuda.kro.kr:8000',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
       },
       '/ws': {
-        target: 'ws://shoppuda.kro.kr:8000',
+        target: 'ws://localhost:8000',
         ws: true,
         changeOrigin: true,
       },
