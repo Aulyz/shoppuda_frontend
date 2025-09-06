@@ -9,8 +9,13 @@ const Footer = () => {
     const fetchSettings = async () => {
       try {
         const data = await api.getSettings();
-        console.log('Fetched settings:', data);
-        setSettings(data);
+        console.log('Fetched data:', data);
+        
+        // JSON 문자열을 객체로 파싱
+        const settingsData = JSON.parse(data.settings);
+        console.log('Site name:', settingsData.site_name);
+        
+        setSettings(settingsData);
       } catch (error) {
         console.error('Failed to fetch settings:', error);
       }
@@ -52,10 +57,11 @@ const Footer = () => {
             <div className="mt-8">
               <div className="font-bold mb-4 text-lg text-gray-700">쇼핑몰 기본정보</div>
               <div className="space-y-1 text-sm leading-6">
-                <p><span className="font-bold">상호명</span> {settings?.site_name}</p>
+                {/* settings -> {"status": true, "settings": "{\"site_name\": \"ShopPuda\", \"site_tagline\": \"ERP System\", \"site_logo_url\": \"\", \"order_prefix\": \"ORD\", \"currency_symbol\": \"\\u20a9\", \"currency_code\": \"KRW\", \"business_hours_start\": \"09:00\", \"business_hours_end\": \"21:00\"}"} */}
+                <p><span className="font-bold">상호명</span> {settings?.site_name }</p>
                 <p><span className="font-bold">대표자명</span> 박수빈</p>
                 <p><span className="font-bold">사업장 주소</span> {/* 주소 입력 */}</p>
-                <p><span className="font-bold">대표 전화</span> 010-2474-0413</p>
+                <p><span className="font-bold">대표 전화</span> {settings?.business_phone}</p>
                 <p><span className="font-bold">사업자 등록번호</span> {/* 번호 입력 */}</p>
                 <p><span className="font-bold">통신판매업 신고번호</span> {/* 번호 입력 */}</p>
                 <p><span className="font-bold">개인정보보호책임자</span> 박수빈</p>
@@ -67,7 +73,7 @@ const Footer = () => {
             <div className="space-y-1 text-sm leading-6">
               <p><span className="font-bold">상담/주문 전화</span> <span className="ml-2">010-2474-0413</span></p>
               <p><span className="font-bold">상담/주문 이메일</span> <span className="ml-2">seri00413@naver.com</span></p>
-              <p><span className="font-bold">CS운영시간</span> {/* 시간 입력 */}</p>
+              <p><span className="font-bold">CS운영시간</span> {settings?.business_hours_start} ~ {settings?.business_hours_end}</p>
             </div>
           </div>
           <div className="flex-grow min-w-[220px] md:pl-4">
