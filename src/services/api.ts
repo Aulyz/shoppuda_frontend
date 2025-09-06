@@ -152,6 +152,11 @@ export const api = {
     first_name?: string
     last_name?: string
   }) => axiosInstance.patch(`/user/profile/`, data).then((res) => res.data),
+
+  // Django 모델 그대로 가져오기
+  getSettings: () => axiosInstance.get(`/core/get-settings`).then((res) => {
+    return res.data
+  }),
 }
 
 export default api

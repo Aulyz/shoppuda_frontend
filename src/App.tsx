@@ -49,7 +49,7 @@ function KakaoAuthHandler() {
             body: new URLSearchParams({
               grant_type: 'authorization_code',
               client_id: import.meta.env.VITE_KAKAO_APP_KEY,
-              redirect_uri: 'http://localhost:3001/kakao/callback',
+              redirect_uri: 'http://localhost:8000/accounts/api/auth/token/',
               code: code,
             }),
           });

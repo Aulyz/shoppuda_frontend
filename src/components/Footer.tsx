@@ -1,11 +1,28 @@
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 const Footer = () => {
+  const [settings, setSettings] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const data = await api.getSettings();
+        console.log('Fetched settings:', data);
+        setSettings(data);
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   return (
     <footer className="bg-gradient-to-br from-orange-100 via-pink-50 to-orange-50 pt-16 pb-12 text-gray-800">
       <div className="max-w-screen-xl mx-auto px-8">
-        <div className="flex flex-col md:flex-row justify-between gap-16 mb-12">
-          <div className="flex-grow min-w-[320px]">
+        <div className="flex flex-col md:flex-row md:gap-8">
+          <div className="mb-8 md:mb-0 md:flex-shrink-0">
             <div className="mb-8">
               <div className="text-[2.5rem] font-serif font-semibold brand-font bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-300 cursor-pointer">ShopPuda</div>
               <div className="inline-block mt-3 px-4 py-2 bg-gradient-to-r from-orange-200 to-pink-200 text-orange-800 rounded-full font-semibold text-base brand-font shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
@@ -35,7 +52,7 @@ const Footer = () => {
             <div className="mt-8">
               <div className="font-bold mb-4 text-lg text-gray-700">쇼핑몰 기본정보</div>
               <div className="space-y-1 text-sm leading-6">
-                <p><span className="font-bold">상호명</span> ShopPuda</p>
+                <p><span className="font-bold">상호명</span> {settings?.site_name}</p>
                 <p><span className="font-bold">대표자명</span> 박수빈</p>
                 <p><span className="font-bold">사업장 주소</span> {/* 주소 입력 */}</p>
                 <p><span className="font-bold">대표 전화</span> 010-2474-0413</p>
@@ -75,8 +92,8 @@ const Footer = () => {
             <a href="#" aria-label="blog" className="p-2 rounded-full hover:bg-gradient-to-r hover:from-orange-100 hover:to-pink-100 hover:text-orange-600 transition-all duration-300 hover:scale-110"><i className="fab fa-blogger-b text-xl"></i></a>
           </div>
         </div>
-      </div>
-    </footer>
+      </div >
+    </footer >
   );
 };
 
