@@ -16,6 +16,8 @@ import ProductsNew from './pages/ProductsNew'
 import ProductsSale from './pages/ProductsSale'
 import { useAuthStore } from './store/authStore'
 import LoginSuccess from './pages/LoginSuccess'
+import KakaoNameInput from './pages/KakaoNameInput'
+import UserDebug from './components/UserDebug'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,7 +42,7 @@ function KakaoAuthHandler() {
 
       if (code) {
         try {
-          // 1. 카카오 토큰 요청
+          // 1. 먼저 카카오에서 직접 토큰 받기
           const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
             method: 'POST',
             headers: {
@@ -49,7 +51,7 @@ function KakaoAuthHandler() {
             body: new URLSearchParams({
               grant_type: 'authorization_code',
               client_id: import.meta.env.VITE_KAKAO_APP_KEY,
-              redirect_uri: 'http://localhost:8000/accounts/api/auth/token/',
+              redirect_uri: import.meta.env.VITE_KAKAO_REDIRECT_URI,
               code: code,
             }),
           });
@@ -59,6 +61,7 @@ function KakaoAuthHandler() {
           }
 
           const tokenData = await tokenResponse.json();
+          console.log('Kakao token response:', tokenData);
 
           // 2. 카카오 사용자 정보 요청
           const userResponse = await fetch('https://kapi.kakao.com/v2/user/me', {
@@ -73,28 +76,69 @@ function KakaoAuthHandler() {
           }
 
           const userData = await userResponse.json();
+          console.log('Kakao user data:', userData);
 
-          // 3. 백엔드로 전송할 사용자 데이터 구성
-          const kakaoUser = {
-            id: userData.id,
-            username: userData.kakao_account?.profile?.nickname || `user${userData.id}`,
-            email: userData.kakao_account?.email || '',
-            profileImage: userData.kakao_account?.profile?.profile_image_url,
-            type: "CUSTOMER" as "CUSTOMER",
-            loginType: "kakao" as "kakao"
-          };
+          // 3. Django 백엔드로 카카오 정보 전송
+          const response = await fetch(`http://shoppuda.kro.kr:8000/accounts/kakao/callback/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              kakao_id: userData.id,
+              email: userData.kakao_account?.email,
+              nickname: userData.kakao_account?.profile?.nickname,
+              access_token: tokenData.access_token,
+            }),
+          });
 
-          // 4. 로그인 처리
-          login(null, null, kakaoUser);
-          
-          // 5. 토큰 저장
-          localStorage.setItem('kakao_access_token', tokenData.access_token);
-          if (tokenData.refresh_token) {
-            localStorage.setItem('kakao_refresh_token', tokenData.refresh_token);
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Django response:', data);
+            
+            // 이름 입력이 필요한 경우
+            if (data.require_name) {
+              navigate(`/kakao/name-input?access=${data.access}&refresh=${data.refresh}&user_id=${data.user.id}&username=${data.user.username}&email=${data.user.email}`);
+            } else if (data.success) {
+              // 로그인 성공
+              login(data.access, data.refresh, data.user);
+              
+              // 로컬 스토리지에 카카오 토큰도 저장
+              localStorage.setItem('kakao_access_token', tokenData.access_token);
+              if (tokenData.refresh_token) {
+                localStorage.setItem('kakao_refresh_token', tokenData.refresh_token);
+              }
+              
+              navigate('/');
+              window.history.replaceState({}, document.title, '/');
+            }
+          } else if (response.redirected) {
+            // Django에서 리다이렉트된 경우
+            const redirectUrl = response.url;
+            const urlParams = new URLSearchParams(redirectUrl.split('?')[1]);
+            const access = urlParams.get('access');
+            const refresh = urlParams.get('refresh');
+            
+            if (access && refresh) {
+              // Django에서 사용자 정보 가져오기
+              const userResponse = await fetch('http://shoppuda.kro.kr:8000/api/user/profile/', {
+                headers: {
+                  'Authorization': `Bearer ${access}`,
+                },
+              });
+              
+              if (userResponse.ok) {
+                const data = await userResponse.json();
+                if (data.status && data.profile) {
+                  login(access, refresh, data.profile);
+                  navigate('/');
+                }
+              }
+            }
+          } else {
+            throw new Error('Failed to authenticate with Kakao');
           }
 
-          // 6. 홈으로 리다이렉트
-          navigate('/');
           window.history.replaceState({}, document.title, '/');
 
         } catch (error) {
@@ -130,8 +174,10 @@ function App() {
             <Route path="/qna" element={<QnA />} />
             <Route path="/kakao/callback" element={<KakaoAuthHandler />} />
             <Route path="/login/success" element={<LoginSuccess />} />
+            <Route path="/kakao/name-input" element={<KakaoNameInput />} />
           </Routes>
         </Layout>
+        <UserDebug />
         <Toaster 
           position="top-right"
           toastOptions={{

@@ -36,12 +36,12 @@ export const useAuthStore = create<AuthState>()(
           try {
             const decoded: any = jwtDecode(accessToken)
             const userData: User = {
-              id: user?.id,
-              username: user?.username || "",
-              email: user?.email || "",
-              first_name: decoded.first_name,
-              last_name: decoded.last_name,
-              loginType: decoded.loginType || "normal",
+              id: user?.id || decoded.user_id,
+              username: user?.username || decoded.username || "",
+              email: user?.email || decoded.email || "",
+              first_name: user?.first_name || decoded.first_name || "",
+              last_name: user?.last_name || decoded.last_name || "",
+              loginType: user?.loginType || decoded.loginType || "normal",
             }
 
             set({
@@ -50,17 +50,30 @@ export const useAuthStore = create<AuthState>()(
               user: userData,
               isAuthenticated: true,
             })
+            
+            console.log("Login successful, user data:", userData);
           } catch (error) {
             console.error("Error decoding token:", error)
+            // 토큰 디코딩 실패시에도 user 정보가 있으면 사용
+            if (user) {
+              set({
+                accessToken,
+                refreshToken,
+                user,
+                isAuthenticated: true,
+              })
+              console.log("Login with user data:", user);
+            }
           }
         } else if (user) {
-          // 토큰 기반이 아닌 경우
+          // 토큰 기반이 아닌 경우 (카카오 로그인 등)
           set({
             accessToken: null,
             refreshToken: null,
             user,
             isAuthenticated: true,
           })
+          console.log("Login without token, user data:", user);
         }
       },
 
