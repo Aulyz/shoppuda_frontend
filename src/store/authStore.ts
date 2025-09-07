@@ -50,10 +50,8 @@ export const useAuthStore = create<AuthState>()(
               user: userData,
               isAuthenticated: true,
             })
-            
-            console.log("Login successful, user data:", userData);
           } catch (error) {
-            console.error("Error decoding token:", error)
+            // Silently handle token decode errors
             // 토큰 디코딩 실패시에도 user 정보가 있으면 사용
             if (user) {
               set({

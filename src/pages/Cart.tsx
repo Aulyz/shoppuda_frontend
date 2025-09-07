@@ -1,12 +1,15 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { TrashIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { api } from '../services/api'
+import CheckoutModal from '../components/CheckoutModal'
 
 function Cart() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
   
   // 페이지 접속 시 맨 위로 스크롤
   useEffect(() => {
@@ -49,6 +52,12 @@ function Cart() {
   const handleRemoveItem = (itemId: number) => {
     removeItemMutation.mutate(itemId)
   }
+  
+  // 결제 성공 핸들러
+  const handleCheckoutSuccess = () => {
+    queryClient.invalidateQueries('cart')
+    navigate('/mypage') // 주문 내역 페이지로 이동
+  }
 
   // 로딩 상태 렌더링
   if (isLoading) {
@@ -70,7 +79,10 @@ function Cart() {
 
   // 총 상품 금액 계산
   const subtotal = cart?.items?.reduce(
-    (sum: number, item: any) => sum + item.product.final_price * item.quantity,
+    (sum: number, item: any) => {
+      const price = item.product.sale_price || item.product.price;
+      return sum + parseFloat(price) * item.quantity;
+    },
     0
   ) || 0
 
@@ -157,7 +169,7 @@ function Cart() {
                       {/* 상품 이미지 */}
                       <div className="relative">
                         <img
-                          src={item.product.image || '/placeholder.png'}
+                          src={item.product.main_image || '/placeholder.png'}
                           alt={item.product.name}
                           className="w-24 h-24 object-cover rounded-xl shadow-md"
                         />
@@ -177,7 +189,7 @@ function Cart() {
                         </p>
                         <div className="flex items-center mt-2">
                           <p className="text-xl font-bold text-orange-600">
-                            ₩{item.product.final_price?.toLocaleString()}
+                            ₩{(item.product.sale_price || item.product.price)?.toLocaleString()}
                           </p>
                           <span className="text-sm text-gray-400 ml-2">개당 가격</span>
                         </div>
@@ -252,7 +264,10 @@ function Cart() {
                 </div>
                 
                 {/* 결제하기 버튼 */}
-                <button className="w-full bg-gradient-to-r from-orange-400 to-pink-400 text-white py-4 rounded-xl font-bold hover:from-orange-500 hover:to-pink-500 transition-all duration-200 transform hover:scale-105 shadow-lg mb-4">
+                <button 
+                  onClick={() => setIsCheckoutModalOpen(true)}
+                  className="w-full bg-gradient-to-r from-orange-400 to-pink-400 text-white py-4 rounded-xl font-bold hover:from-orange-500 hover:to-pink-500 transition-all duration-200 transform hover:scale-105 shadow-lg mb-4"
+                >
                   결제하기
                 </button>
                 

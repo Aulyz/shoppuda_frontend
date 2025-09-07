@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { api } from '../services/api'
-import { FunnelIcon } from '@heroicons/react/24/outline'
+import { FunnelIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import ProductCard from '../components/ProductCard'
+
+interface Category {
+  id: number
+  name: string
+  code: string
+  parent: number | null
+  full_path: string
+  icon: string
+  children: Category[]
+}
 
 function ProductsAll() {
   // URL 파라미터 관리
   const [searchParams, setSearchParams] = useSearchParams()
   const [showFilters, setShowFilters] = useState(false)
+  const [expandedCategories, setExpandedCategories] = useState<number[]>([])
   
   // 페이지 접속 시 맨 위로 스크롤
   useEffect(() => {
@@ -23,6 +35,12 @@ function ProductsAll() {
   const { data, isLoading } = useQuery(
     ['products', category, sort, page],
     () => api.getProducts({ category, ordering: sort, page })
+  )
+
+  // 카테고리 목록 조회
+  const { data: categoriesData } = useQuery(
+    'categories',
+    () => api.getCategories()
   )
 
   // 정렬 변경 핸들러
@@ -54,6 +72,63 @@ function ProductsAll() {
     const newParams = new URLSearchParams(searchParams)
     newParams.set('page', String(newPage))
     setSearchParams(newParams)
+  }
+
+  // 카테고리 확장/축소 토글
+  const toggleCategoryExpand = (categoryId: number) => {
+    setExpandedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    )
+  }
+
+  // 카테고리 렌더링 함수
+  const renderCategory = (cat: Category, level: number = 0) => {
+    const hasChildren = cat.children && cat.children.length > 0
+    const isExpanded = expandedCategories.includes(cat.id)
+    const isSelected = category === cat.name
+
+    return (
+      <div key={cat.id}>
+        <button
+          onClick={() => {
+            if (hasChildren && level === 0) {
+              toggleCategoryExpand(cat.id)
+            }
+            handleCategoryChange(cat.name)
+          }}
+          className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
+            isSelected
+              ? 'bg-gradient-to-r from-orange-100 to-pink-100 text-orange-700 font-semibold' 
+              : 'hover:bg-gray-50 text-gray-700'
+          }`}
+          style={{ paddingLeft: `${(level * 16) + 16}px` }}
+        >
+          <div className="flex items-center space-x-2">
+            <i className={`${cat.icon} text-sm`}></i>
+            <span>{cat.name}</span>
+          </div>
+          {hasChildren && level === 0 && (
+            <span onClick={(e) => {
+              e.stopPropagation()
+              toggleCategoryExpand(cat.id)
+            }}>
+              {isExpanded ? (
+                <ChevronDownIcon className="h-4 w-4" />
+              ) : (
+                <ChevronRightIcon className="h-4 w-4" />
+              )}
+            </span>
+          )}
+        </button>
+        {hasChildren && isExpanded && (
+          <div className="mt-1">
+            {cat.children.map(child => renderCategory(child, level + 1))}
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -98,34 +173,22 @@ function ProductsAll() {
           <aside className={`${showFilters ? 'block' : 'hidden'} md:block w-64 flex-shrink-0`}>
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 sticky top-8">
               <h3 className="font-bold text-xl text-gray-900 mb-6">카테고리</h3>
-              <ul className="space-y-2">
-                <li>
-                  <button
-                    onClick={() => handleCategoryChange('')}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 ${
-                      !category 
-                        ? 'bg-gradient-to-r from-orange-100 to-pink-100 text-orange-700 font-semibold' 
-                        : 'hover:bg-gray-50 text-gray-700'
-                    }`}
-                  >
-                    전체 상품
-                  </button>
-                </li>
-                {['패션', '전자제품', '홈&리빙', '뷰티', '스포츠', '도서', '식품', '완구'].map((cat) => (
-                  <li key={cat}>
-                    <button
-                      onClick={() => handleCategoryChange(cat)}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 ${
-                        category === cat 
-                          ? 'bg-gradient-to-r from-orange-100 to-pink-100 text-orange-700 font-semibold' 
-                          : 'hover:bg-gray-50 text-gray-700'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-1">
+                <button
+                  onClick={() => handleCategoryChange('')}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 ${
+                    !category 
+                      ? 'bg-gradient-to-r from-orange-100 to-pink-100 text-orange-700 font-semibold' 
+                      : 'hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2">
+                    <i className="fas fa-th-large text-sm"></i>
+                    <span>전체 상품</span>
+                  </div>
+                </button>
+                {categoriesData?.categories?.map((cat: Category) => renderCategory(cat))}
+              </div>
             </div>
           </aside>
 
@@ -147,51 +210,7 @@ function ProductsAll() {
                 {/* 상품 목록 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                   {data?.products?.map((product: any) => (
-                    <Link
-                      key={product.id}
-                      to={`/products/${product.id}`}
-                      className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:z-10 relative"
-                    >
-                      {/* 상품 이미지 */}
-                      <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-2xl bg-gray-100 relative">
-                        <img
-                          src={product.image || '/placeholder.png'}
-                          alt={product.name}
-                          className="h-64 w-full object-cover object-center group-hover:scale-110 transition-transform duration-300"
-                        />
-                        {/* 할인 배지 */}
-                        {product.discount_price && (
-                          <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                            {Math.round(((parseFloat(product.price) - parseFloat(product.discount_price)) / parseFloat(product.price)) * 100)}% OFF
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* 상품 정보 */}
-                      <div className="p-4">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors duration-200">
-                          {product.name}
-                        </h3>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            {product.discount_price ? (
-                              <div className="flex flex-col">
-                                <p className="text-lg font-bold text-orange-600">
-                                  ₩{parseFloat(product.discount_price).toLocaleString()}
-                                </p>
-                                <p className="text-sm text-gray-500 line-through">
-                                  ₩{parseFloat(product.price).toLocaleString()}
-                                </p>
-                              </div>
-                            ) : (
-                              <p className="text-lg font-bold text-gray-900">
-                                ₩{parseFloat(product.price).toLocaleString()}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
+                    <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
 

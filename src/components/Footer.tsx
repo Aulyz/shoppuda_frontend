@@ -9,15 +9,13 @@ const Footer = () => {
     const fetchSettings = async () => {
       try {
         const data = await api.getSettings();
-        console.log('Fetched data:', data);
         
         // JSON 문자열을 객체로 파싱
         const settingsData = JSON.parse(data.settings);
-        console.log('Site name:', settingsData.site_name);
         
         setSettings(settingsData);
       } catch (error) {
-        console.error('Failed to fetch settings:', error);
+        // Silently handle errors
       }
     };
     fetchSettings();

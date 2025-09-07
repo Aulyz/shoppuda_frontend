@@ -10,8 +10,6 @@ const LoginSuccess = () => {
 
   useEffect(() => {
     const processLogin = async () => {
-      console.log("=== 카카오 로그인 성공 처리 ===");
-      console.log("현재 URL:", window.location.href);
 
       const access = params.get("access");
       const refresh = params.get("refresh");
@@ -40,7 +38,6 @@ const LoginSuccess = () => {
             navigate("/");
           }
         } catch (error) {
-          console.error("Login processing error:", error);
           // 에러가 발생해도 토큰만으로 로그인 시도
           login(access, refresh);
           navigate("/");

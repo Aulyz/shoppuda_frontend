@@ -11,6 +11,7 @@ import Cart from './pages/Cart'
 import Login from './pages/Login'
 import SignUp from './pages/SignUp'
 import MyPage from './pages/MyPage'
+import Wishlist from './pages/Wishlist'
 import QnA from './pages/QnA'
 import ProductsNew from './pages/ProductsNew'
 import ProductsSale from './pages/ProductsSale'
@@ -171,6 +172,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/mypage" element={<MyPage />} />
+            <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/qna" element={<QnA />} />
             <Route path="/kakao/callback" element={<KakaoAuthHandler />} />
             <Route path="/login/success" element={<LoginSuccess />} />

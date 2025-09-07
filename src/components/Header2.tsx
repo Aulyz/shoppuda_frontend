@@ -161,8 +161,8 @@ const Header2 = () => {
               <button className="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="Profile menu">
                 <UserIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
               </button>
-              {/* DropDownMenu */}
-              <div className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-lg bg-white py-2 shadow-xl ring-1 ring-black ring-opacity-5 hidden group-hover:block">
+              {/* DropDownMenu - mt-2를 제거하고 top으로 위치 조정 */}
+              <div className="absolute right-0 z-50 top-full w-48 origin-top-right rounded-lg bg-white py-2 shadow-xl ring-1 ring-black ring-opacity-5 hidden group-hover:block">
                 {isAuthenticated ? (
                   <>
                     <Link to="/mypage" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">

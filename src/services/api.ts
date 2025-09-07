@@ -99,6 +99,9 @@ export const api = {
   getProducts: (params?: any) =>
     axiosInstance.get(`/shop/products/`, { params }).then((res) => res.data),
 
+  getCategories: () =>
+    axiosInstance.get(`/shop/categories/`).then((res) => res.data),
+
   getProduct: (id: number | string) => {
     if (typeof id === "string" && id.includes("-")) {
       // UUID 특수 처리(백엔드 이슈 우회 로직 유지)
@@ -112,27 +115,32 @@ export const api = {
     return axiosInstance.get(`/shop/products/${id}/`).then((res) => res.data)
   },
 
-  getCart: () => axiosInstance.get(`/shop/cart/`).then((res) => res.data),
+  getCart: () => axiosInstance.get(`/cart/`).then((res) => res.data),
 
   addToCart: (data: {
     product_id: number | string
     quantity: number
     size?: string
     color?: string
-  }) => axiosInstance.post(`/shop/cart/add/`, data).then((res) => res.data),
+  }) => axiosInstance.post(`/cart/`, data).then((res) => res.data),
 
   updateCartItem: (itemId: number, quantity: number) =>
     axiosInstance
-      .patch(`/shop/cart/items/${itemId}/`, { quantity })
+      .patch(`/cart/items/${itemId}/`, { quantity })
       .then((res) => res.data),
 
   removeFromCart: (itemId: number) =>
-    axiosInstance.delete(`/shop/cart/items/${itemId}/`).then((res) => res.data),
+    axiosInstance.delete(`/cart/items/${itemId}/`).then((res) => res.data),
+  
+  getCartCount: () => axiosInstance.get(`/cart/count/`).then((res) => res.data),
 
-  getWishlist: () => axiosInstance.get(`/shop/wishlist/`).then((res) => res.data),
+  getWishlist: () => axiosInstance.get(`/wishlist/`).then((res) => res.data),
 
   toggleWishlist: (productId: number | string) =>
-    axiosInstance.post(`/shop/wishlist/toggle/${productId}/`).then((res) => res.data),
+    axiosInstance.post(`/wishlist/toggle/`, { product_id: productId }).then((res) => res.data),
+  
+  checkWishlist: (productId: number | string) =>
+    axiosInstance.get(`/wishlist/check/${productId}/`).then((res) => res.data),
 
   getMyOrders: () => axiosInstance.get(`/shop/orders/`).then((res) => res.data),
 
@@ -157,6 +165,23 @@ export const api = {
   getSettings: () => axiosInstance.get(`/core/get-settings`).then((res) => {
     return res.data
   }),
+  
+  // Checkout APIs
+  checkout: (data: {
+    shipping_address: string
+    shipping_zipcode?: string
+    payment_method: string
+  }) => axiosInstance.post(`/checkout/`, data).then((res) => res.data),
+  
+  directPurchase: (data: {
+    product_id: number | string
+    quantity: number
+    shipping_address: string
+    shipping_zipcode?: string
+    payment_method: string
+  }) => axiosInstance.post(`/checkout/direct/`, data).then((res) => res.data),
+  
+  getCheckoutInfo: () => axiosInstance.get(`/checkout/info/`).then((res) => res.data),
 }
 
 export default api

@@ -16,10 +16,6 @@ const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://lo
 
 const KakaoLogin: React.FC<KakaoLoginProps> = ({ onFailure }) => {
   const handleLogin = () => {
-    console.log('카카오 로그인 시작');
-    console.log('사용할 리다이렉트 URI:', KAKAO_REDIRECT_URI);
-    console.log('현재 URL:', window.location.href);
-    console.log('앱 키:', import.meta.env.VITE_KAKAO_APP_KEY);
     try {
       if (!KAKAO_CLIENT_ID) {
         throw new Error('Kakao Client ID is not configured');
@@ -32,7 +28,6 @@ const KakaoLogin: React.FC<KakaoLoginProps> = ({ onFailure }) => {
       window.location.href = kakaoAuthUrl;
       
     } catch (error) {
-      console.error('카카오 로그인 실패:', error);
       if (onFailure) onFailure(error instanceof Error ? error : new Error('카카오 로그인 실패'));
     }
   };
