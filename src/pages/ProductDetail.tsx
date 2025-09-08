@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from 'react-query'
 import { HeartIcon, ShoppingCartIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
@@ -6,6 +6,7 @@ import { HeartIcon as HeartSolidIcon, StarIcon } from '@heroicons/react/24/solid
 import toast from 'react-hot-toast'
 import { useAuthStore } from '../store/authStore'
 import { api } from '../services/api'
+import CheckoutModal from '../components/CheckoutModal'
 
 interface Product {
   id: string | number
@@ -176,6 +177,7 @@ function ProductDetail() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [activeTab, setActiveTab] = useState('상품정보')
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -284,6 +286,35 @@ function ProductDetail() {
     if (newQuantity >= 1 && newQuantity <= maxStock) {
       setQuantity(newQuantity)
     }
+  }
+  
+  // 바로 구매 핸들러
+  const handleDirectPurchase = () => {
+    if (!isAuthenticated) {
+      toast.error('로그인이 필요합니다.')
+      navigate('/login')
+      return
+    }
+    
+    // 상품 정보를 state로 전달하면서 Checkout 페이지로 이동
+    navigate('/checkout', {
+      state: {
+        directPurchase: true,
+        product: {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          discount_price: product.discount_price,
+          image: product.images?.[0] || product.image,
+          quantity: quantity
+        }
+      }
+    })
+  }
+  
+  // 결제 성공 핸들러
+  const handleCheckoutSuccess = () => {
+    navigate('/mypage') // 주문 내역 페이지로 이동
   }
 
   const handlePrevImage = () => {
@@ -563,6 +594,12 @@ function ProductDetail() {
                   )}
                 </button>
                 <button
+                  onClick={handleDirectPurchase}
+                  className="flex-1 bg-gradient-to-r from-orange-400 to-pink-400 text-white py-4 rounded-2xl font-semibold hover:from-orange-500 hover:to-pink-500 transition-all duration-200 flex items-center justify-center space-x-2"
+                >
+                  <span>바로 구매</span>
+                </button>
+                <button
                   onClick={handleToggleWishlist}
                   disabled={toggleWishlistMutation.isLoading}
                   className="w-14 h-14 rounded-2xl border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -711,6 +748,17 @@ function ProductDetail() {
           </div>
         </div>
       </div>
+      
+      {/* 결제 모달 */}
+      <CheckoutModal
+        isOpen={isCheckoutModalOpen}
+        onClose={() => setIsCheckoutModalOpen(false)}
+        onSuccess={handleCheckoutSuccess}
+        directPurchase={{
+          productId: product?.id as number,
+          quantity: quantity
+        }}
+      />
     </div>
   )
 }

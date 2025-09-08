@@ -39,11 +39,11 @@ axiosInstance.interceptors.response.use(
       try {
         const { refreshToken, updateTokens, logout } = useAuthStore.getState()
         if (refreshToken) {
-          const res = await axios.post(`${API_BASE_URL}/token/refresh/`, {
+          const res = await axios.post(`${API_BASE_URL}/accounts/api/jwt/refresh/`, {
             refresh: refreshToken,
           })
-          const { access } = res.data
-          updateTokens(access, refreshToken)
+          const { access, refresh } = res.data
+          updateTokens(access, refresh || refreshToken)
 
           originalRequest.headers.Authorization = `Bearer ${access}`
           return axiosInstance(originalRequest)
@@ -65,25 +65,19 @@ export const api = {
     data: { username: string; password: string; remember_me?: boolean },
     next_url?: string
   ) => {
-    const params = new URLSearchParams()
-    if (next_url) params.set("next", next_url)
-
-    const formData = new FormData()
-    formData.append("username", data.username)
-    formData.append("password", data.password)
-    if (data.remember_me) formData.append("remember_me", "true")
-
     return axiosInstance
-      .post(
-        `/account/login${params.toString() ? "?" + params.toString() : ""}`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      )
+      .post("/account/login", {
+        username: data.username,
+        password: data.password,
+      })
       .then((res) => res.data)
   },
 
+  kakaoLogin: (data: { kakao_id: string; email: string; nickname: string }) =>
+    axiosInstance.post("/accounts/api/jwt/kakao-login/", data).then((res) => res.data),
+
   logout: () =>
-    axiosInstance.post(`/jwt/logout/`).then((res) => res.data),
+    axiosInstance.post(`/account/logout`).then((res) => res.data),
 
   signup: (data: any) =>
     axiosInstance.post(`/account/signup/`, data).then((res) => res.data),
@@ -94,7 +88,7 @@ export const api = {
       .then((res) => res.data),
 
   refreshToken: (refresh: string) =>
-    axiosInstance.post(`/token/refresh/`, { refresh }).then((res) => res.data),
+    axiosInstance.post(`/accounts/api/jwt/refresh/`, { refresh }).then((res) => res.data),
 
   getProducts: (params?: any) =>
     axiosInstance.get(`/shop/products/`, { params }).then((res) => res.data),
@@ -161,27 +155,48 @@ export const api = {
     last_name?: string
   }) => axiosInstance.patch(`/user/profile/`, data).then((res) => res.data),
 
+  // MyPage APIs
+  getMyPageProfile: () => 
+    axiosInstance.get(`/mypage/profile/`).then((res) => res.data),
+  
+  updateMyPageProfile: (data: any) =>
+    axiosInstance.patch(`/mypage/profile/`, data).then((res) => res.data),
+  
+  getShippingAddresses: () =>
+    axiosInstance.get(`/mypage/shipping-addresses/`).then((res) => res.data),
+  
+  createShippingAddress: (data: any) =>
+    axiosInstance.post(`/mypage/shipping-addresses/`, data).then((res) => res.data),
+  
+  updateShippingAddress: (id: number, data: any) =>
+    axiosInstance.patch(`/mypage/shipping-addresses/${id}/`, data).then((res) => res.data),
+  
+  deleteShippingAddress: (id: number) =>
+    axiosInstance.delete(`/mypage/shipping-addresses/${id}/`).then((res) => res.data),
+  
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    axiosInstance.post(`/mypage/change-password/`, data).then((res) => res.data),
+
   // Django 모델 그대로 가져오기
   getSettings: () => axiosInstance.get(`/core/get-settings`).then((res) => {
     return res.data
   }),
   
   // Checkout APIs
+  getCheckoutInfo: () => 
+    axiosInstance.get(`/checkout/info/`).then((res) => res.data),
+  
   checkout: (data: {
-    shipping_address: string
-    shipping_zipcode?: string
+    shipping_address_id: number
     payment_method: string
   }) => axiosInstance.post(`/checkout/`, data).then((res) => res.data),
   
   directPurchase: (data: {
-    product_id: number | string
+    product_id: number
     quantity: number
-    shipping_address: string
-    shipping_zipcode?: string
+    shipping_address_id: number
     payment_method: string
   }) => axiosInstance.post(`/checkout/direct/`, data).then((res) => res.data),
-  
-  getCheckoutInfo: () => axiosInstance.get(`/checkout/info/`).then((res) => res.data),
 }
 
 export default api

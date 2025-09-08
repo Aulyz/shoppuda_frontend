@@ -15,8 +15,7 @@ interface CheckoutModalProps {
 }
 
 function CheckoutModal({ isOpen, onClose, onSuccess, directPurchase }: CheckoutModalProps) {
-  const [shippingAddress, setShippingAddress] = useState('')
-  const [shippingZipcode, setShippingZipcode] = useState('')
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null)
   const [paymentMethod, setPaymentMethod] = useState('card')
   
   // 결제 정보 조회
@@ -35,8 +34,7 @@ function CheckoutModal({ isOpen, onClose, onSuccess, directPurchase }: CheckoutM
         return api.directPurchase({
           product_id: directPurchase.productId,
           quantity: directPurchase.quantity,
-          shipping_address: data.shipping_address,
-          shipping_zipcode: data.shipping_zipcode,
+          shipping_address_id: data.shipping_address_id,
           payment_method: data.payment_method
         })
       } else {
@@ -55,25 +53,28 @@ function CheckoutModal({ isOpen, onClose, onSuccess, directPurchase }: CheckoutM
     }
   )
   
-  // 사용자 정보로 초기값 설정
+  // 기본 배송지 선택
   useEffect(() => {
-    if (checkoutInfo?.user_info) {
-      setShippingAddress(checkoutInfo.user_info.address || '')
-      setShippingZipcode(checkoutInfo.user_info.zipcode || '')
+    if (checkoutInfo?.shipping_addresses && checkoutInfo.shipping_addresses.length > 0) {
+      const defaultAddress = checkoutInfo.shipping_addresses.find((addr: any) => addr.is_default)
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress.id)
+      } else {
+        setSelectedAddressId(checkoutInfo.shipping_addresses[0].id)
+      }
     }
   }, [checkoutInfo])
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!shippingAddress.trim()) {
-      toast.error('배송 주소를 입력해주세요.')
+    if (!selectedAddressId) {
+      toast.error('배송지를 선택해주세요.')
       return
     }
     
     checkoutMutation.mutate({
-      shipping_address: shippingAddress,
-      shipping_zipcode: shippingZipcode,
+      shipping_address_id: selectedAddressId,
       payment_method: paymentMethod
     })
   }
@@ -130,32 +131,69 @@ function CheckoutModal({ isOpen, onClose, onSuccess, directPurchase }: CheckoutM
               </div>
             )}
             
-            {/* 배송 정보 */}
+            {/* 배송지 선택 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                배송 주소 <span className="text-red-500">*</span>
+                배송지 선택 <span className="text-red-500">*</span>
               </label>
-              <textarea
-                value={shippingAddress}
-                onChange={(e) => setShippingAddress(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                rows={3}
-                placeholder="배송받으실 주소를 입력해주세요"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                우편번호
-              </label>
-              <input
-                type="text"
-                value={shippingZipcode}
-                onChange={(e) => setShippingZipcode(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="우편번호 (선택)"
-              />
+              {checkoutInfo?.shipping_addresses && checkoutInfo.shipping_addresses.length > 0 ? (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {checkoutInfo.shipping_addresses.map((address: any) => (
+                    <label
+                      key={address.id}
+                      className={`block p-3 border rounded-lg cursor-pointer transition-all ${
+                        selectedAddressId === address.id
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="shipping_address"
+                        value={address.id}
+                        checked={selectedAddressId === address.id}
+                        onChange={() => setSelectedAddressId(address.id)}
+                        className="sr-only"
+                      />
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium">{address.nickname}</span>
+                            {address.is_default && (
+                              <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
+                                기본 배송지
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-900">{address.recipient_name}</p>
+                          <p className="text-sm text-gray-600">{address.phone_number}</p>
+                          <p className="text-sm text-gray-600">
+                            [{address.postal_code}] {address.address} {address.detail_address}
+                          </p>
+                        </div>
+                        <div className="ml-3">
+                          <div className={`w-4 h-4 rounded-full border-2 ${
+                            selectedAddressId === address.id
+                              ? 'border-orange-500 bg-orange-500'
+                              : 'border-gray-400'
+                          }`}>
+                            {selectedAddressId === address.id && (
+                              <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 bg-gray-50 rounded-lg text-center">
+                  <p className="text-gray-600 mb-2">등록된 배송지가 없습니다.</p>
+                  <p className="text-sm text-gray-500">
+                    마이페이지에서 배송지를 등록해주세요.
+                  </p>
+                </div>
+              )}
             </div>
             
             {/* 결제 방법 */}

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from 'react-query';
 import toast from 'react-hot-toast';
 import { api } from '../services/api';
+import { CalendarIcon } from '@heroicons/react/24/outline';
 
 // Daum 우편번호 서비스 타입 선언
 declare global {
@@ -498,21 +499,119 @@ function SignUp() {
                 <h3 className="font-semibold text-gray-800 mb-4">추가 정보</h3>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="birth_date" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       생년월일
                     </label>
-                    <input
-                      id="birth_date"
-                      name="birth_date"
-                      type="date"
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 ${
-                        errors.birth_date
-                          ? 'border-red-300 focus:ring-red-400 focus:border-red-400'
-                          : 'border-gray-300 focus:ring-orange-400 focus:border-orange-400'
-                      }`}
-                      value={formData.birth_date}
-                      onChange={handleChange}
-                    />
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* 년도 선택 */}
+                      <div className="relative">
+                        <select
+                          name="birth_year"
+                          className={`w-full px-3 py-2.5 border rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 transition-all duration-200 ${
+                            errors.birth_date
+                              ? 'border-red-300 focus:ring-red-400 focus:border-red-400'
+                              : 'border-gray-300 focus:ring-orange-400 focus:border-orange-400'
+                          }`}
+                          value={formData.birth_date ? new Date(formData.birth_date).getFullYear() : ''}
+                          onChange={(e) => {
+                            const year = e.target.value;
+                            const month = formData.birth_date ? String(new Date(formData.birth_date).getMonth() + 1).padStart(2, '0') : '01';
+                            const day = formData.birth_date ? String(new Date(formData.birth_date).getDate()).padStart(2, '0') : '01';
+                            setFormData(prev => ({
+                              ...prev,
+                              birth_date: year ? `${year}-${month}-${day}` : ''
+                            }));
+                          }}
+                        >
+                          <option value="">년도</option>
+                          {Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                            <option key={year} value={year}>{year}년</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                      
+                      {/* 월 선택 */}
+                      <div className="relative">
+                        <select
+                          name="birth_month"
+                          className={`w-full px-3 py-2.5 border rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 transition-all duration-200 ${
+                            errors.birth_date
+                              ? 'border-red-300 focus:ring-red-400 focus:border-red-400'
+                              : 'border-gray-300 focus:ring-orange-400 focus:border-orange-400'
+                          }`}
+                          value={formData.birth_date ? new Date(formData.birth_date).getMonth() + 1 : ''}
+                          onChange={(e) => {
+                            const month = e.target.value.padStart(2, '0');
+                            const year = formData.birth_date ? new Date(formData.birth_date).getFullYear() : new Date().getFullYear();
+                            const day = formData.birth_date ? String(new Date(formData.birth_date).getDate()).padStart(2, '0') : '01';
+                            setFormData(prev => ({
+                              ...prev,
+                              birth_date: month ? `${year}-${month}-${day}` : ''
+                            }));
+                          }}
+                        >
+                          <option value="">월</option>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                            <option key={month} value={month}>{month}월</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                      
+                      {/* 일 선택 */}
+                      <div className="relative">
+                        <select
+                          name="birth_day"
+                          className={`w-full px-3 py-2.5 border rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 transition-all duration-200 ${
+                            errors.birth_date
+                              ? 'border-red-300 focus:ring-red-400 focus:border-red-400'
+                              : 'border-gray-300 focus:ring-orange-400 focus:border-orange-400'
+                          }`}
+                          value={formData.birth_date ? new Date(formData.birth_date).getDate() : ''}
+                          onChange={(e) => {
+                            const day = e.target.value.padStart(2, '0');
+                            const year = formData.birth_date ? new Date(formData.birth_date).getFullYear() : new Date().getFullYear();
+                            const month = formData.birth_date ? String(new Date(formData.birth_date).getMonth() + 1).padStart(2, '0') : '01';
+                            setFormData(prev => ({
+                              ...prev,
+                              birth_date: day ? `${year}-${month}-${day}` : ''
+                            }));
+                          }}
+                        >
+                          <option value="">일</option>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                            <option key={day} value={day}>{day}일</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* 선택된 날짜 표시 */}
+                    {formData.birth_date && (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+                        <CalendarIcon className="w-4 h-4" />
+                        <span>선택된 날짜: {new Date(formData.birth_date).toLocaleDateString('ko-KR', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}</span>
+                      </div>
+                    )}
+                    
                     {errors.birth_date && <p className="text-xs text-red-600 mt-1">{errors.birth_date}</p>}
                   </div>
 

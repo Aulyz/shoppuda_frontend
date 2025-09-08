@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { api } from '../services/api';
 import toast from 'react-hot-toast';
 import {
   UserIcon,
@@ -13,7 +14,9 @@ import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  XMarkIcon,
+  Bars3Icon
 } from '@heroicons/react/24/outline';
 
 declare global {
@@ -67,6 +70,7 @@ const MyPage: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -101,28 +105,19 @@ const MyPage: React.FC = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('http://shoppuda.kro.kr:8000/api/mypage/profile/', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
+      const response = await api.getMyPageProfile();
+      const data = response.profile || response; // API가 {profile: ...} 형태로 반환하는 경우 처리
+      setProfile(data);
+      setFormData({
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        phone_number: data.phone_number || '',
+        birth_date: data.birth_date || '',
+        gender: data.gender || ''
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.status && data.profile) {
-          setProfile(data.profile);
-          setFormData({
-            first_name: data.profile.first_name || '',
-            last_name: data.profile.last_name || '',
-            phone_number: data.profile.phone_number || '',
-            birth_date: data.profile.birth_date || '',
-            gender: data.profile.gender || ''
-          });
-        }
-      }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
-      toast.error('프로필 정보를 불러오는데 실패했습니다.');
+      toast.error('프로필을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -130,36 +125,13 @@ const MyPage: React.FC = () => {
 
   const handleProfileUpdate = async () => {
     try {
-      const response = await fetch('http://shoppuda.kro.kr:8000/api/mypage/profile/', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        if (data.status) {
-          setProfile(data.profile);
-          setEditMode(false);
-          toast.success('프로필이 업데이트되었습니다.');
-        }
-      } else {
-        console.error('Profile update error:', data);
-        if (data.errors) {
-          const errorMessages = Object.entries(data.errors)
-            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
-            .join('\n');
-          toast.error(`프로필 업데이트 실패:\n${errorMessages}`);
-        } else {
-          toast.error(data.message || '프로필 업데이트에 실패했습니다.');
-        }
-      }
+      const response = await api.updateMyPageProfile(formData);
+      const data = response.profile || response;
+      setProfile(data);
+      setEditMode(false);
+      toast.success('프로필이 업데이트되었습니다.');
     } catch (error) {
-      console.error('Profile update error:', error);
+      console.error('Failed to update profile:', error);
       toast.error('프로필 업데이트에 실패했습니다.');
     }
   };
@@ -182,9 +154,8 @@ const MyPage: React.FC = () => {
           new_password: passwordData.new_password
         })
       });
-
-      const data = await response.json();
-      if (data.status) {
+      
+      if (response.ok) {
         toast.success('비밀번호가 변경되었습니다.');
         setPasswordData({
           current_password: '',
@@ -192,21 +163,23 @@ const MyPage: React.FC = () => {
           confirm_password: ''
         });
       } else {
-        toast.error(data.message || '비밀번호 변경에 실패했습니다.');
+        const data = await response.json();
+        toast.error(data.error || '비밀번호 변경에 실패했습니다.');
       }
     } catch (error) {
+      console.error('Failed to change password:', error);
       toast.error('비밀번호 변경에 실패했습니다.');
     }
   };
 
   const handleAddressSubmit = async () => {
     try {
-      const url = editingAddress
+      const url = editingAddress 
         ? `http://shoppuda.kro.kr:8000/api/mypage/shipping-addresses/${editingAddress.id}/`
         : 'http://shoppuda.kro.kr:8000/api/mypage/shipping-addresses/';
       
       const method = editingAddress ? 'PUT' : 'POST';
-
+      
       const response = await fetch(url, {
         method,
         headers: {
@@ -215,7 +188,7 @@ const MyPage: React.FC = () => {
         },
         body: JSON.stringify(addressForm)
       });
-
+      
       if (response.ok) {
         toast.success(editingAddress ? '배송지가 수정되었습니다.' : '배송지가 추가되었습니다.');
         fetchProfile();
@@ -232,13 +205,14 @@ const MyPage: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error('Failed to save address:', error);
       toast.error('배송지 저장에 실패했습니다.');
     }
   };
 
   const handleDeleteAddress = async (id: number) => {
-    if (!confirm('이 배송지를 삭제하시겠습니까?')) return;
-
+    if (!confirm('정말 이 배송지를 삭제하시겠습니까?')) return;
+    
     try {
       const response = await fetch(`http://shoppuda.kro.kr:8000/api/mypage/shipping-addresses/${id}/`, {
         method: 'DELETE',
@@ -246,87 +220,33 @@ const MyPage: React.FC = () => {
           'Authorization': `Bearer ${accessToken}`
         }
       });
-
+      
       if (response.ok) {
         toast.success('배송지가 삭제되었습니다.');
         fetchProfile();
       }
     } catch (error) {
+      console.error('Failed to delete address:', error);
       toast.error('배송지 삭제에 실패했습니다.');
     }
-  };
-
-  const handleEditAddress = (address: ShippingAddress) => {
-    setEditingAddress(address);
-    setAddressForm({
-      nickname: address.nickname,
-      recipient_name: address.recipient_name,
-      phone_number: address.phone_number,
-      postal_code: address.postal_code,
-      address: address.address,
-      detail_address: address.detail_address,
-      is_default: address.is_default
-    });
-    setShowAddressForm(true);
-  };
-
-  // 전화번호 포맷팅 함수
-  const formatPhoneNumber = (value: string) => {
-    // 숫자만 추출
-    const numbers = value.replace(/[^\d]/g, '');
-    
-    // 전화번호 포맷팅
-    if (numbers.length <= 3) {
-      return numbers;
-    } else if (numbers.length <= 6) {
-      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
-    } else if (numbers.length <= 10) {
-      return `${numbers.slice(0, 3)}-${numbers.slice(3, 6)}-${numbers.slice(6)}`;
-    } else if (numbers.length === 11) {
-      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
-    } else {
-      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
-    }
-  };
-
-  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'phone_number' | 'phone_number_address') => {
-    const formatted = formatPhoneNumber(e.target.value);
-    if (field === 'phone_number') {
-      setFormData({ ...formData, phone_number: formatted });
-    } else {
-      setAddressForm({ ...addressForm, phone_number: formatted });
-    }
-  };
-
-  const searchPostcode = () => {
-    new window.daum.Postcode({
-      oncomplete: function(data: any) {
-        // 우편번호와 주소 정보를 해당 필드에 넣기
-        const fullAddress = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
-        
-        setAddressForm(prev => ({
-          ...prev,
-          postal_code: data.zonecode,
-          address: fullAddress
-        }));
-      },
-      theme: {
-        bgColor: "#FFFFFF",
-        searchBgColor: "#FF6B35",
-        contentBgColor: "#FFFFFF",
-        pageBgColor: "#FAFAFA",
-        textColor: "#333333",
-        queryTextColor: "#FFFFFF",
-        postcodeTextColor: "#FA5858",
-        emphTextColor: "#FF6B35",
-        outlineColor: "#E0E0E0"
-      }
-    }).open();
   };
 
   const handleLogout = () => {
     logout();
     navigate('/');
+    toast.success('로그아웃되었습니다.');
+  };
+
+  const searchAddress = () => {
+    new window.daum.Postcode({
+      oncomplete: function(data: any) {
+        setAddressForm({
+          ...addressForm,
+          postal_code: data.zonecode,
+          address: data.roadAddress || data.jibunAddress
+        });
+      }
+    }).open();
   };
 
   if (loading) {
@@ -337,125 +257,104 @@ const MyPage: React.FC = () => {
     );
   }
 
+  const menuItems = [
+    { id: 'profile', label: '프로필', icon: UserIcon },
+    { id: 'addresses', label: '배송지 관리', icon: MapPinIcon },
+    { id: 'orders', label: '주문 내역', icon: ClipboardDocumentListIcon },
+    { id: 'points', label: '포인트', icon: CreditCardIcon },
+    { id: 'password', label: '비밀번호 변경', icon: KeyIcon }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-pink-400 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                {profile?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {profile?.first_name || profile?.username}님 안녕하세요!
-                </h1>
-                <p className="text-gray-600">{profile?.email}</p>
-                <div className="flex items-center space-x-4 mt-2">
-                  <span className="text-sm text-gray-500">포인트: {profile?.points?.toLocaleString()}P</span>
-                  <span className="text-sm text-gray-500">주문: {profile?.total_orders}건</span>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">마이페이지</h1>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-8">
+          {/* 모바일 메뉴 토글 버튼 */}
+          <button
+            className="lg:hidden flex items-center justify-between w-full bg-white p-4 rounded-lg shadow-sm mb-4"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <span className="font-medium">메뉴</span>
+            {mobileMenuOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
+          </button>
+
+          {/* 사이드바 메뉴 - 모바일에서는 토글 */}
+          <div className={`lg:col-span-1 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 lg:mb-6">
+              {/* 사용자 정보 요약 */}
+              <div className="flex flex-col items-center text-center mb-4 sm:mb-6">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-orange-400 to-pink-400 rounded-full flex items-center justify-center mb-3">
+                  <UserIcon className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">{profile?.first_name || profile?.username}</h2>
+                <p className="text-sm text-gray-600">{profile?.email}</p>
+                <div className="mt-3 bg-orange-50 px-3 py-1 rounded-full">
+                  <span className="text-sm font-medium text-orange-600">
+                    {profile?.points?.toLocaleString() || 0} P
+                  </span>
                 </div>
               </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
-              <span>로그아웃</span>
-            </button>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-4">
+              {/* 메뉴 아이템 */}
               <nav className="space-y-1">
+                {menuItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id as any);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
+                      activeTab === item.id 
+                        ? 'bg-orange-50 text-orange-600' 
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+                
                 <button
-                  onClick={() => setActiveTab('profile')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'profile' ? 'bg-orange-50 text-orange-600' : 'hover:bg-gray-100'
-                  }`}
+                  onClick={handleLogout}
+                  className="w-full flex items-center space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-sm sm:text-base"
                 >
-                  <UserIcon className="h-5 w-5" />
-                  <span>프로필 정보</span>
+                  <ArrowRightOnRectangleIcon className="w-5 h-5" />
+                  <span>로그아웃</span>
                 </button>
-                <button
-                  onClick={() => setActiveTab('addresses')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'addresses' ? 'bg-orange-50 text-orange-600' : 'hover:bg-gray-100'
-                  }`}
-                >
-                  <MapPinIcon className="h-5 w-5" />
-                  <span>배송지 관리</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('orders')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'orders' ? 'bg-orange-50 text-orange-600' : 'hover:bg-gray-100'
-                  }`}
-                >
-                  <ClipboardDocumentListIcon className="h-5 w-5" />
-                  <span>주문 내역</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('points')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'points' ? 'bg-orange-50 text-orange-600' : 'hover:bg-gray-100'
-                  }`}
-                >
-                  <CreditCardIcon className="h-5 w-5" />
-                  <span>포인트 내역</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('password')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === 'password' ? 'bg-orange-50 text-orange-600' : 'hover:bg-gray-100'
-                  }`}
-                >
-                  <KeyIcon className="h-5 w-5" />
-                  <span>비밀번호 변경</span>
-                </button>
-                <Link
-                  to="/wishlist"
-                  className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <HeartIcon className="h-5 w-5" />
-                  <span>위시리스트</span>
-                </Link>
               </nav>
             </div>
           </div>
 
-          {/* Content */}
+          {/* 메인 콘텐츠 */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              {/* Profile Tab */}
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+              {/* 프로필 탭 */}
               {activeTab === 'profile' && (
                 <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold">프로필 정보</h2>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-0">프로필 정보</h3>
                     {!editMode ? (
                       <button
                         onClick={() => setEditMode(true)}
-                        className="flex items-center space-x-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                        className="flex items-center space-x-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm sm:text-base"
                       >
-                        <PencilIcon className="h-4 w-4" />
+                        <PencilIcon className="w-4 h-4" />
                         <span>수정</span>
                       </button>
                     ) : (
                       <div className="flex space-x-2">
                         <button
                           onClick={handleProfileUpdate}
-                          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm sm:text-base"
                         >
                           저장
                         </button>
                         <button
                           onClick={() => setEditMode(false)}
-                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm sm:text-base"
                         >
                           취소
                         </button>
@@ -463,80 +362,96 @@ const MyPage: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">이름</label>
-                      <input
-                        type="text"
-                        value={formData.first_name}
-                        onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                        disabled={!editMode}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                      {editMode ? (
+                        <input
+                          type="text"
+                          value={formData.first_name}
+                          onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        />
+                      ) : (
+                        <p className="text-gray-900 py-2">{profile?.first_name || '-'}</p>
+                      )}
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">성</label>
-                      <input
-                        type="text"
-                        value={formData.last_name}
-                        onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                        disabled={!editMode}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">성</label>
+                      {editMode ? (
+                        <input
+                          type="text"
+                          value={formData.last_name}
+                          onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        />
+                      ) : (
+                        <p className="text-gray-900 py-2">{profile?.last_name || '-'}</p>
+                      )}
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
-                      <input
-                        type="email"
-                        value={profile?.email || ''}
-                        disabled
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+                      {editMode ? (
+                        <input
+                          type="tel"
+                          value={formData.phone_number}
+                          onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        />
+                      ) : (
+                        <p className="text-gray-900 py-2">{profile?.phone_number || '-'}</p>
+                      )}
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
-                      <input
-                        type="tel"
-                        value={formData.phone_number}
-                        onChange={(e) => handlePhoneNumberChange(e, 'phone_number')}
-                        disabled={!editMode}
-                        placeholder="010-0000-0000"
-                        maxLength={13}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                      <p className="text-gray-900 py-2">{profile?.email}</p>
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">생년월일</label>
-                      <input
-                        type="date"
-                        value={formData.birth_date}
-                        onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                        disabled={!editMode}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">생년월일</label>
+                      {editMode ? (
+                        <input
+                          type="date"
+                          value={formData.birth_date}
+                          onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        />
+                      ) : (
+                        <p className="text-gray-900 py-2">{profile?.birth_date || '-'}</p>
+                      )}
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">성별</label>
-                      <select
-                        value={formData.gender}
-                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                        disabled={!editMode}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100"
-                      >
-                        <option value="">선택안함</option>
-                        <option value="M">남성</option>
-                        <option value="F">여성</option>
-                      </select>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">성별</label>
+                      {editMode ? (
+                        <select
+                          value={formData.gender}
+                          onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        >
+                          <option value="">선택</option>
+                          <option value="M">남성</option>
+                          <option value="F">여성</option>
+                          <option value="O">기타</option>
+                        </select>
+                      ) : (
+                        <p className="text-gray-900 py-2">
+                          {profile?.gender === 'M' ? '남성' : profile?.gender === 'F' ? '여성' : profile?.gender === 'O' ? '기타' : '-'}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Addresses Tab */}
+              {/* 배송지 관리 탭 */}
               {activeTab === 'addresses' && (
                 <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold">배송지 관리</h2>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-0">배송지 관리</h3>
                     <button
                       onClick={() => {
                         setShowAddressForm(true);
@@ -551,98 +466,92 @@ const MyPage: React.FC = () => {
                           is_default: false
                         });
                       }}
-                      className="flex items-center space-x-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                      className="flex items-center space-x-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm sm:text-base"
                     >
-                      <PlusIcon className="h-4 w-4" />
-                      <span>배송지 추가</span>
+                      <PlusIcon className="w-4 h-4" />
+                      <span>새 배송지 추가</span>
                     </button>
                   </div>
 
                   {showAddressForm && (
-                    <div className="border border-gray-200 rounded-lg p-6 mb-6">
-                      <h3 className="text-lg font-medium mb-4">
+                    <div className="border rounded-lg p-4 mb-6 bg-gray-50">
+                      <h4 className="font-semibold mb-4">
                         {editingAddress ? '배송지 수정' : '새 배송지 추가'}
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">배송지 별칭</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">별칭</label>
                           <input
                             type="text"
                             value={addressForm.nickname}
-                            onChange={(e) => setAddressForm({ ...addressForm, nickname: e.target.value })}
+                            onChange={(e) => setAddressForm({...addressForm, nickname: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                             placeholder="예: 집, 회사"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">받는 분</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">수령인</label>
                           <input
                             type="text"
                             value={addressForm.recipient_name}
-                            onChange={(e) => setAddressForm({ ...addressForm, recipient_name: e.target.value })}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            onChange={(e) => setAddressForm({...addressForm, recipient_name: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">연락처</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
                           <input
                             type="tel"
                             value={addressForm.phone_number}
-                            onChange={(e) => handlePhoneNumberChange(e, 'phone_number_address')}
-                            placeholder="010-0000-0000"
-                            maxLength={13}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            onChange={(e) => setAddressForm({...addressForm, phone_number: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">우편번호</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">우편번호</label>
                           <div className="flex space-x-2">
                             <input
                               type="text"
                               value={addressForm.postal_code}
                               readOnly
-                              placeholder="우편번호"
-                              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none"
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
                             />
                             <button
                               type="button"
-                              onClick={searchPostcode}
-                              className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors flex items-center space-x-2"
+                              onClick={searchAddress}
+                              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
                             >
-                              <MagnifyingGlassIcon className="h-4 w-4" />
-                              <span>주소 검색</span>
+                              검색
                             </button>
                           </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">주소</label>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">주소</label>
                           <input
                             type="text"
                             value={addressForm.address}
                             readOnly
-                            placeholder="기본 주소"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
                           />
                         </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">상세주소</label>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">상세주소</label>
                           <input
                             type="text"
                             value={addressForm.detail_address}
-                            onChange={(e) => setAddressForm({ ...addressForm, detail_address: e.target.value })}
-                            placeholder="동/호수 등 상세 주소를 입력하세요"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            onChange={(e) => setAddressForm({...addressForm, detail_address: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                           />
                         </div>
-                        <div className="md:col-span-2">
+                        <div className="sm:col-span-2">
                           <label className="flex items-center space-x-2">
                             <input
                               type="checkbox"
                               checked={addressForm.is_default}
-                              onChange={(e) => setAddressForm({ ...addressForm, is_default: e.target.checked })}
-                              className="rounded text-orange-500 focus:ring-orange-500"
+                              onChange={(e) => setAddressForm({...addressForm, is_default: e.target.checked})}
+                              className="text-orange-600 focus:ring-orange-500 rounded"
                             />
-                            <span className="text-sm text-gray-700">기본 배송지로 설정</span>
+                            <span className="text-sm">기본 배송지로 설정</span>
                           </label>
                         </div>
                       </div>
@@ -652,13 +561,13 @@ const MyPage: React.FC = () => {
                             setShowAddressForm(false);
                             setEditingAddress(null);
                           }}
-                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm"
                         >
                           취소
                         </button>
                         <button
                           onClick={handleAddressSubmit}
-                          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
                         >
                           저장
                         </button>
@@ -666,121 +575,157 @@ const MyPage: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {profile?.shipping_addresses?.map((address) => (
-                      <div key={address.id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h4 className="font-medium">{address.nickname}</h4>
+                      <div key={address.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex-1 mb-3 sm:mb-0">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="font-semibold">{address.nickname}</span>
                               {address.is_default && (
-                                <span className="px-2 py-1 bg-orange-100 text-orange-600 text-xs rounded">
+                                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full">
                                   기본 배송지
                                 </span>
                               )}
                             </div>
-                            <p className="text-gray-800 text-sm font-medium">{address.recipient_name}</p>
-                            <p className="text-gray-600 text-sm">{address.phone_number}</p>
-                            <p className="text-gray-600 text-sm">
+                            <p className="text-sm text-gray-600">{address.recipient_name}</p>
+                            <p className="text-sm text-gray-600">{address.phone_number}</p>
+                            <p className="text-sm text-gray-600">
                               [{address.postal_code}] {address.address} {address.detail_address}
                             </p>
                           </div>
                           <div className="flex space-x-2">
                             <button
-                              onClick={() => handleEditAddress(address)}
-                              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                              onClick={() => {
+                                setEditingAddress(address);
+                                setAddressForm({
+                                  nickname: address.nickname,
+                                  recipient_name: address.recipient_name,
+                                  phone_number: address.phone_number,
+                                  postal_code: address.postal_code,
+                                  address: address.address,
+                                  detail_address: address.detail_address,
+                                  is_default: address.is_default
+                                });
+                                setShowAddressForm(true);
+                              }}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             >
-                              <PencilIcon className="h-4 w-4" />
+                              <PencilIcon className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteAddress(address.id)}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             >
-                              <TrashIcon className="h-4 w-4" />
+                              <TrashIcon className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
                       </div>
                     ))}
+                    
+                    {(!profile?.shipping_addresses || profile.shipping_addresses.length === 0) && (
+                      <p className="text-center text-gray-500 py-8">등록된 배송지가 없습니다.</p>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Orders Tab */}
+              {/* 주문 내역 탭 */}
               {activeTab === 'orders' && (
                 <div>
-                  <h2 className="text-xl font-semibold mb-6">주문 내역</h2>
-                  <div className="text-center py-12 text-gray-500">
-                    주문 내역이 없습니다.
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">주문 내역</h3>
+                  <div className="text-center py-8">
+                    <ClipboardDocumentListIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-500">주문 내역이 없습니다.</p>
                   </div>
                 </div>
               )}
 
-              {/* Points Tab */}
+              {/* 포인트 탭 */}
               {activeTab === 'points' && (
                 <div>
-                  <h2 className="text-xl font-semibold mb-6">포인트 내역</h2>
-                  <div className="mb-4 p-4 bg-orange-50 rounded-lg">
-                    <p className="text-sm text-gray-600">현재 보유 포인트</p>
-                    <p className="text-2xl font-bold text-orange-600">{profile?.points?.toLocaleString()}P</p>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">포인트</h3>
+                  <div className="bg-gradient-to-r from-orange-400 to-pink-400 rounded-lg p-4 sm:p-6 text-white mb-6">
+                    <p className="text-sm mb-2">사용 가능 포인트</p>
+                    <p className="text-2xl sm:text-3xl font-bold">
+                      {profile?.points?.toLocaleString() || 0} P
+                    </p>
                   </div>
-                  <div className="space-y-3">
+                  
+                  <h4 className="font-semibold mb-3">최근 포인트 내역</h4>
+                  <div className="space-y-2">
                     {profile?.recent_points?.map((point) => (
-                      <div key={point.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div>
-                          <p className="font-medium">{point.description}</p>
-                          <p className="text-sm text-gray-500">
+                      <div key={point.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b">
+                        <div className="mb-2 sm:mb-0">
+                          <p className="text-sm font-medium">{point.description}</p>
+                          <p className="text-xs text-gray-500">
                             {new Date(point.created_at).toLocaleDateString()}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <p className={`font-bold ${point.point_type === 'EARN' ? 'text-green-600' : 'text-red-600'}`}>
-                            {point.point_type === 'EARN' ? '+' : '-'}{point.amount.toLocaleString()}P
-                          </p>
-                          <p className="text-sm text-gray-500">잔액: {point.balance.toLocaleString()}P</p>
+                        <div className="flex items-center justify-between sm:block">
+                          <span className={`font-semibold ${
+                            point.point_type === 'EARN' ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {point.point_type === 'EARN' ? '+' : '-'}
+                            {point.amount.toLocaleString()} P
+                          </span>
+                          <span className="text-sm text-gray-500 sm:ml-4">
+                            잔액: {point.balance.toLocaleString()} P
+                          </span>
                         </div>
                       </div>
                     ))}
+                    
+                    {(!profile?.recent_points || profile.recent_points.length === 0) && (
+                      <p className="text-center text-gray-500 py-4">포인트 내역이 없습니다.</p>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Password Tab */}
+              {/* 비밀번호 변경 탭 */}
               {activeTab === 'password' && (
                 <div>
-                  <h2 className="text-xl font-semibold mb-6">비밀번호 변경</h2>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">비밀번호 변경</h3>
                   <div className="max-w-md">
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">현재 비밀번호</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          현재 비밀번호
+                        </label>
                         <input
                           type="password"
                           value={passwordData.current_password}
-                          onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          onChange={(e) => setPasswordData({...passwordData, current_password: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">새 비밀번호</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          새 비밀번호
+                        </label>
                         <input
                           type="password"
                           value={passwordData.new_password}
-                          onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">새 비밀번호 확인</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          새 비밀번호 확인
+                        </label>
                         <input
                           type="password"
                           value={passwordData.confirm_password}
-                          onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                         />
                       </div>
                       <button
                         onClick={handlePasswordChange}
-                        className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                        className="w-full py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
                       >
                         비밀번호 변경
                       </button>
@@ -792,6 +737,9 @@ const MyPage: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* 다음 주소 검색 API 스크립트 */}
+      <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
     </div>
   );
 };

@@ -32,23 +32,23 @@ function Login() {
       const kakaoAccount = profile.kakao_account;
       const profileInfo = kakaoAccount?.profile;
       
-      // 사용자 정보로 로그인 처리
-      const kakaoUser = {
-        id: profile.id,
-        username: profileInfo?.nickname || `kakao_${profile.id}`,
+      // 백엔드에 카카오 로그인 정보 전송하여 JWT 토큰 받기
+      const response = await api.kakaoLogin({
+        kakao_id: profile.id,
         email: kakaoAccount?.email || '',
-        first_name: profileInfo?.nickname || '',
-        type: 'CUSTOMER' as const,
-        loginType: 'kakao' as const
-      };
+        nickname: profileInfo?.nickname || ''
+      });
       
-      console.log('처리된 카카오 사용자 정보:', kakaoUser);
-      
-      login(null, null, kakaoUser);
-      
-      const searchParams = new URLSearchParams(location.search);
-      const nextUrl = searchParams.get('next') || '/';
-      navigate(nextUrl);
+      if (response.success) {
+        // JWT 토큰과 사용자 정보 저장
+        login(response.access, response.refresh, response.user);
+        
+        const searchParams = new URLSearchParams(location.search);
+        const nextUrl = searchParams.get('next') || '/';
+        navigate(nextUrl);
+      } else {
+        setError(response.error || '카카오 로그인에 실패했습니다.');
+      }
     } catch (err: any) {
       console.error('카카오 로그인 처리 실패:', err);
       setError('카카오 로그인에 실패했습니다.');
@@ -77,27 +77,18 @@ function Login() {
       const response = await api.login(loginData, nextUrl !== '/' ? nextUrl : undefined);
 
       if (response.status === 'OK') {
-        // 로그인 성공 시 처리
-        if (response.type && response.next_url) {
-          // 사용자 타입 정보를 스토어에 저장 (필요시)
-          login(null, null, {
-            type: response.type,
-            username: username,
-          });
-          
-          // next_url로 리다이렉트
-          navigate(response.next_url);
-        } else {
-          // 기본 메인 페이지로 리다이렉트
-          navigate('/');
-        }
+        // JWT 토큰과 사용자 정보 저장
+        login(response.access, response.refresh, response.user);
+        
+        // 리다이렉트
+        navigate(response.next_url || nextUrl);
       } else {
         setError(response.message || '로그인에 실패했습니다.');
       }
     } catch (err: any) {
       console.error("Login failed:", err);
       
-      if (err?.response?.data?.status === 'ERROR') {
+      if (err?.response?.data?.message) {
         setError(err.response.data.message);
       } else if (err?.response?.status === 405) {
         setError('잘못된 요청 방식입니다.');
