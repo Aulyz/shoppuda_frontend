@@ -136,7 +136,7 @@ export const api = {
   checkWishlist: (productId: number | string) =>
     axiosInstance.get(`/wishlist/check/${productId}/`).then((res) => res.data),
 
-  getMyOrders: () => axiosInstance.get(`/shop/orders/`).then((res) => res.data),
+  getMyOrders: () => axiosInstance.get(`/mypage/orders/`).then((res) => res.data),
 
   createOrder: (data: {
     shipping_address: string
@@ -197,6 +197,13 @@ export const api = {
     shipping_address_id: number
     payment_method: string
   }) => axiosInstance.post(`/checkout/direct/`, data).then((res) => res.data),
+  
+  // Order APIs
+  getUserOrders: () => 
+    axiosInstance.get(`/orders/`).then((res) => res.data),
+  
+  cancelOrder: (orderId: number) =>
+    axiosInstance.post(`/orders/${orderId}/cancel/`).then((res) => res.data),
 }
 
 export default api

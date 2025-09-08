@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQueryClient } from "react-query";
 import BannerNotification from "./BannerNotification";
 import MainNavigation from "./MainNavigation";
 import { useAuthStore } from "../store/authStore";
@@ -15,6 +16,7 @@ import {
 
 const Header2 = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, isAuthenticated, logout } = useAuthStore();
 
   const [showGif, setShowGif] = useState(true);
@@ -52,7 +54,15 @@ const Header2 = () => {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
+      // React Query 캐시 전체 초기화
+      queryClient.clear();
+      // 또는 특정 쿼리만 초기화하려면:
+      // queryClient.removeQueries();
+      
+      // zustand store 로그아웃
       logout();
+      
+      // 홈페이지로 이동
       navigate("/");
     }
   };

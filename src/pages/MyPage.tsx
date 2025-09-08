@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from 'react-query';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
@@ -66,6 +67,7 @@ interface UserProfile {
 const MyPage: React.FC = () => {
   const { user, accessToken, logout } = useAuthStore();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'profile' | 'addresses' | 'orders' | 'points' | 'password'>('profile');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -231,10 +233,22 @@ const MyPage: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-    toast.success('로그아웃되었습니다.');
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+    } catch (error) {
+      console.error("Logout API error:", error);
+    } finally {
+      // React Query 캐시 전체 초기화
+      queryClient.clear();
+      
+      // zustand store 로그아웃
+      logout();
+      
+      // 홈페이지로 이동
+      navigate('/');
+      toast.success('로그아웃되었습니다.');
+    }
   };
 
   const searchAddress = () => {
@@ -303,8 +317,12 @@ const MyPage: React.FC = () => {
                   <button
                     key={item.id}
                     onClick={() => {
-                      setActiveTab(item.id as any);
-                      setMobileMenuOpen(false);
+                      if (item.id === 'orders') {
+                        navigate('/orders');
+                      } else {
+                        setActiveTab(item.id as any);
+                        setMobileMenuOpen(false);
+                      }
                     }}
                     className={`w-full flex items-center space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
                       activeTab === item.id 

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { useAuthStore } from '../store/authStore'
 import { api } from '../services/api'
 import CheckoutModal from '../components/CheckoutModal'
+import { formatPrice } from '../utils/formatPrice'
 
 interface Product {
   id: string | number
@@ -537,7 +538,7 @@ function ProductDetail() {
 
             <div className="bg-white rounded-2xl p-6 shadow-lg">
               <div className="text-4xl font-bold text-blue-600 mb-4">
-                ₩{product.price.toLocaleString()}
+                ₩{formatPrice(product.price)}
               </div>
 
               <div className="space-y-3 text-sm">
@@ -726,7 +727,7 @@ function ProductDetail() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">{relatedProduct.name}</h3>
-                    <p className="text-blue-600 font-bold">₩{relatedProduct.price.toLocaleString()}</p>
+                    <p className="text-blue-600 font-bold">₩{formatPrice(relatedProduct.price)}</p>
                     <div className="flex items-center mt-2">
                       <div className="flex items-center space-x-1">
                         {[...Array(5)].map((_, i) => (

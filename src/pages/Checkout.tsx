@@ -4,6 +4,7 @@ import { useQuery, useMutation } from 'react-query'
 import { MapPinIcon, PhoneIcon, UserIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { api } from '../services/api'
+import DaumPostcode from '../components/DaumPostcode'
 
 function Checkout() {
   const navigate = useNavigate()
@@ -20,6 +21,7 @@ function Checkout() {
     nickname: ''
   })
   const [paymentMethod, setPaymentMethod] = useState('card')
+  const [showPostcode, setShowPostcode] = useState(false)
 
   // 바로구매 여부 확인
   const isDirectPurchase = location.state?.directPurchase
@@ -105,6 +107,15 @@ function Checkout() {
       }
     }
   )
+
+  const handlePostcodeComplete = (data: { address: string; zonecode: string }) => {
+    setNewAddress({
+      ...newAddress,
+      postal_code: data.zonecode,
+      address: data.address
+    })
+    setShowPostcode(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -310,7 +321,7 @@ function Checkout() {
                       <button
                         type="button"
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                        onClick={() => toast.info('우편번호 검색 기능은 준비 중입니다.')}
+                        onClick={() => setShowPostcode(true)}
                       >
                         우편번호 찾기
                       </button>
@@ -476,6 +487,14 @@ function Checkout() {
           </div>
         </div>
       </div>
+      
+      {/* 우편번호 찾기 모달 */}
+      {showPostcode && (
+        <DaumPostcode
+          onComplete={handlePostcodeComplete}
+          onClose={() => setShowPostcode(false)}
+        />
+      )}
     </div>
   )
 }

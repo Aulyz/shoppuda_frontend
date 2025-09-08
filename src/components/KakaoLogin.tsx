@@ -12,7 +12,7 @@ interface KakaoLoginProps {
 }
 
 const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_APP_KEY;
-const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://localhost:3000/oauth/kakao/callback';
+const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://localhost:8000/oauth/kakao/callback';
 
 const KakaoLogin: React.FC<KakaoLoginProps> = ({ onFailure }) => {
   const handleLogin = () => {

@@ -16,6 +16,7 @@ import Wishlist from './pages/Wishlist'
 import QnA from './pages/QnA'
 import ProductsNew from './pages/ProductsNew'
 import ProductsSale from './pages/ProductsSale'
+import Orders from './pages/Orders'
 import { useAuthStore } from './store/authStore'
 import LoginSuccess from './pages/LoginSuccess'
 import KakaoNameInput from './pages/KakaoNameInput'
@@ -34,15 +35,22 @@ const queryClient = new QueryClient({
 // 카카오 로그인 처리 컴포넌트
 function KakaoAuthHandler() {
   const navigate = useNavigate();
-  const { login } = useAuthStore();
 
   useEffect(() => {
+    // 이미 처리중이거나 처리완료된 경우 중복 실행 방지
+    const isProcessing = sessionStorage.getItem('kakao_processing');
+    if (isProcessing === 'true') {
+      return;
+    }
+    
     const handleKakaoAuth = async () => {
       const fullUrl = window.location.href;
       const codeMatch = fullUrl.match(/[?&]code=([^&]+)/);
       const code = codeMatch ? decodeURIComponent(codeMatch[1]) : null;
 
       if (code) {
+        // 처리 시작 표시
+        sessionStorage.setItem('kakao_processing', 'true');
         try {
           // 1. 먼저 카카오에서 직접 토큰 받기
           const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
@@ -103,6 +111,7 @@ function KakaoAuthHandler() {
               navigate(`/kakao/name-input?access=${data.access}&refresh=${data.refresh}&user_id=${data.user.id}&username=${data.user.username}&email=${data.user.email}`);
             } else if (data.success) {
               // 로그인 성공
+              const { login } = useAuthStore.getState();
               login(data.access, data.refresh, data.user);
               
               // 로컬 스토리지에 카카오 토큰도 저장
@@ -111,6 +120,8 @@ function KakaoAuthHandler() {
                 localStorage.setItem('kakao_refresh_token', tokenData.refresh_token);
               }
               
+              // 처리 완료 표시
+              sessionStorage.removeItem('kakao_processing');
               navigate('/');
               window.history.replaceState({}, document.title, '/');
             }
@@ -132,6 +143,7 @@ function KakaoAuthHandler() {
               if (userResponse.ok) {
                 const data = await userResponse.json();
                 if (data.status && data.profile) {
+                  const { login } = useAuthStore.getState();
                   login(access, refresh, data.profile);
                   navigate('/');
                 }
@@ -145,13 +157,14 @@ function KakaoAuthHandler() {
 
         } catch (error) {
           console.error('Kakao login error:', error);
+          sessionStorage.removeItem('kakao_processing');
           navigate('/login');
         }
       }
     };
 
     handleKakaoAuth();
-  }, [navigate, login]);
+  }, []); // dependency array를 비워서 한 번만 실행되도록 함
 
   return null;
 }
@@ -176,6 +189,7 @@ function App() {
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/qna" element={<QnA />} />
+            <Route path="/orders" element={<Orders />} />
             <Route path="/kakao/callback" element={<KakaoAuthHandler />} />
             <Route path="/login/success" element={<LoginSuccess />} />
             <Route path="/kakao/name-input" element={<KakaoNameInput />} />
