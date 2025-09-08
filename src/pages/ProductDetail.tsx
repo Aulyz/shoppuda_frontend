@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/authStore'
 import { api } from '../services/api'
 import CheckoutModal from '../components/CheckoutModal'
 import { formatPrice } from '../utils/formatPrice'
+import axios from 'axios'
 
 interface Product {
   id: string | number
@@ -219,6 +220,26 @@ function ProductDetail() {
     if (product) {
       setIsWishlisted(product.isWishlisted || false)
     }
+  }, [product])
+
+  // Track recently viewed product
+  useEffect(() => {
+    const trackProductView = async () => {
+      if (product && product.id) {
+        try {
+          // Product ID is UUID string
+          await axios.post(
+            'http://shoppuda.kro.kr:8000/products/api/recently-viewed/add/',
+            { product_id: product.id },
+            { withCredentials: true }
+          )
+        } catch (error) {
+          console.error('Failed to track product view:', error)
+        }
+      }
+    }
+
+    trackProductView()
   }, [product])
 
   // 장바구니 추가 mutation

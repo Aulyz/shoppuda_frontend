@@ -91,7 +91,7 @@ const Header2 = () => {
           <span className="text-gray-300">|</span>
           <Link to="/orders" className="hover:text-gray-900 transition-colors">주문조회</Link>
           <span className="text-gray-300">|</span>
-          <Link to="/recent-products" className="hover:text-gray-900 transition-colors">최근본상품</Link>
+          <Link to="/recently-viewed" className="hover:text-gray-900 transition-colors">최근본상품</Link>
           <span className="text-gray-300">|</span>
           <Link to="/customer" className="hover:text-gray-900 transition-colors">고객센터</Link>
         </div>

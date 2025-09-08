@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import RecentlyViewed from "../components/RecentlyViewed";
 
 // Swiper
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -451,6 +452,7 @@ export default function Home() {
       <HeroSlider />
       <CouponSection />
       <BestSellerSection />
+      <RecentlyViewed />
       <VideoSection />
       <SaleBannerSection />
       <NewItemsSection />
