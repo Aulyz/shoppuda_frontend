@@ -423,7 +423,7 @@ const InstagramSection = () => {
         </div>
         <div className="text-center mt-6 sm:mt-8">
           <a
-            href="https://instagram.com/shoppuda_official"
+            href="https://www.instagram.com/shop_puda/"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center px-5 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-200"

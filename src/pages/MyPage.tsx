@@ -97,6 +97,20 @@ const MyPage: React.FC = () => {
     is_default: false
   });
 
+  // 전화번호 포맷팅 함수
+  const formatPhoneNumber = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    } else if (numbers.length <= 10) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 6)}-${numbers.slice(6)}`;
+    } else {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+    }
+  };
+
   useEffect(() => {
     if (!accessToken) {
       navigate('/login');
@@ -514,6 +528,7 @@ const MyPage: React.FC = () => {
                             value={addressForm.recipient_name}
                             onChange={(e) => setAddressForm({...addressForm, recipient_name: e.target.value})}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            placeholder="받는 분 성함"
                           />
                         </div>
                         <div>
@@ -521,8 +536,13 @@ const MyPage: React.FC = () => {
                           <input
                             type="tel"
                             value={addressForm.phone_number}
-                            onChange={(e) => setAddressForm({...addressForm, phone_number: e.target.value})}
+                            onChange={(e) => {
+                              const formatted = formatPhoneNumber(e.target.value);
+                              setAddressForm({...addressForm, phone_number: formatted});
+                            }}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            placeholder="010-0000-0000"
+                            maxLength={13}
                           />
                         </div>
                         <div>
@@ -533,6 +553,7 @@ const MyPage: React.FC = () => {
                               value={addressForm.postal_code}
                               readOnly
                               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                              placeholder="00000"
                             />
                             <button
                               type="button"
@@ -550,6 +571,7 @@ const MyPage: React.FC = () => {
                             value={addressForm.address}
                             readOnly
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                            placeholder="우편번호 검색을 클릭하세요"
                           />
                         </div>
                         <div className="sm:col-span-2">
@@ -559,6 +581,7 @@ const MyPage: React.FC = () => {
                             value={addressForm.detail_address}
                             onChange={(e) => setAddressForm({...addressForm, detail_address: e.target.value})}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            placeholder="동/호수 등 상세주소 입력"
                           />
                         </div>
                         <div className="sm:col-span-2">
