@@ -25,6 +25,7 @@ interface Product {
   features?: string[]
   specifications?: { [key: string]: string }
   isWishlisted?: boolean
+  discount_price?: number
   // API 응답에서 올 수 있는 추가 필드들
   title?: string
   product_name?: string
@@ -318,6 +319,11 @@ function ProductDetail() {
       return
     }
     
+    if (!product) {
+      toast.error('상품 정보를 불러올 수 없습니다.')
+      return
+    }
+    
     // 상품 정보를 state로 전달하면서 Checkout 페이지로 이동
     navigate('/checkout', {
       state: {
@@ -326,7 +332,7 @@ function ProductDetail() {
           id: product.id,
           name: product.name,
           price: product.price,
-          discount_price: product.discount_price,
+          discount_price: product.discount_price || null,
           image: product.images?.[0] || product.image,
           quantity: quantity
         }

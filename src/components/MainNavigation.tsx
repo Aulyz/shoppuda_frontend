@@ -29,6 +29,20 @@ const MainNavigation = () => {
     category.parent === null
   ) || [];
 
+  // 카테고리의 URL-safe 코드 생성 함수
+  const getCategoryUrlCode = (category: Category): string => {
+    // API에서 code가 있으면 사용하고, 없으면 name을 기반으로 생성
+    if (category.code && category.code !== '') {
+      return category.code.replace(/^_/, 'cat'); // "_1" -> "cat1"
+    }
+    
+    // code가 없거나 빈 문자열이면 name을 URL-safe하게 변환
+    return category.name.toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-가-힣]/g, '')
+      .replace(/^-+|-+$/g, ''); // 앞뒤 하이픈 제거
+  };
+
   const staticItems = [
     { name: '홈', href: '/', isStatic: true },
     { name: '전체보기', href: '/products', isStatic: true, hasDropdown: true },
@@ -70,7 +84,7 @@ const MainNavigation = () => {
                     {topLevelCategories.map((category: Category) => (
                       <Link
                         key={category.id}
-                        to={`/products/${category.code}`}
+                        to={`/products/${getCategoryUrlCode(category)}`}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
                         onClick={() => setHoveredCategory(null)}
                       >

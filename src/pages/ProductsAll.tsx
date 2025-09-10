@@ -31,10 +31,10 @@ function ProductsAll() {
   const sort = searchParams.get('sort') || ''
   const page = parseInt(searchParams.get('page') || '1')
 
-  // 상품 목록 조회
+  // 상품 목록 조회 (전체 상품 - 카테고리 필터 없음)
   const { data, isLoading } = useQuery(
-    ['products', category, sort, page],
-    () => api.getProducts({ category, ordering: sort, page })
+    ['products', sort, page], // category 제거
+    () => api.getProducts({ ordering: sort, page }) // category 파라미터 제거
   )
 
   // 카테고리 목록 조회
