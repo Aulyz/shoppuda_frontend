@@ -89,60 +89,36 @@ function CategoryProducts() {
   // 현재 카테고리의 하위 카테고리들
   const subCategories = currentCategory?.children || [];
 
-  // 모든 상품을 가져온 후 클라이언트에서 필터링
-  const { data: allProductsData, isLoading } = useQuery(
-    ['allProducts', sort, page],
-    () => api.getProducts({ ordering: sort, page }),
+  // API 기반 카테고리 필터링으로 상품 조회
+  const { data, isLoading } = useQuery(
+    ['categoryProducts', categoryCode, subCategoryCode, sort, page, category],
+    () => {
+      const targetCategory = currentSubCategory || currentCategory;
+      if (!targetCategory) return null;
+
+      // category 쿼리 파라미터가 있으면 해당 카테고리로 필터링
+      let filterCategoryId = targetCategory.id;
+      if (category) {
+        const foundCategory = allCategories.find(cat => cat.name === category) ||
+                             (currentCategory?.children || []).find(cat => cat.name === category);
+        if (foundCategory) {
+          filterCategoryId = foundCategory.id;
+        }
+      }
+
+      console.log(`API 필터링: category_id=${filterCategoryId} (${targetCategory.name})`);
+      
+      // Django API에 카테고리 ID로 필터링 요청
+      return api.getProducts({ 
+        category: filterCategoryId,
+        ordering: sort, 
+        page 
+      });
+    },
     {
-      enabled: !!currentCategory // 현재 카테고리가 있을 때만 조회
+      enabled: !!currentCategory && !!allCategories.length // 현재 카테고리와 카테고리 목록이 로드된 후에만 조회
     }
-  )
-
-  // 클라이언트 사이드 카테고리 필터링
-  const data = useMemo(() => {
-    if (!allProductsData?.products) return allProductsData;
-
-    const targetCategory = currentSubCategory || currentCategory;
-    if (!targetCategory) return allProductsData;
-
-    // category 쿼리 파라미터가 있으면 해당 카테고리로 필터링
-    let filterCategoryId = targetCategory.id;
-    if (category) {
-      const foundCategory = allCategories.find(cat => cat.name === category) ||
-                           (currentCategory?.children || []).find(cat => cat.name === category);
-      if (foundCategory) {
-        filterCategoryId = foundCategory.id;
-      }
-    }
-
-    console.log(`클라이언트 필터링: category_id=${filterCategoryId} (${targetCategory.name})`);
-    
-    // 해당 카테고리의 상품만 필터링 (하위 카테고리 포함)
-    const filteredProducts = allProductsData.products.filter((product: any) => {
-      const productCategoryId = product.category?.id;
-      
-      // 정확히 일치하는 카테고리
-      if (productCategoryId === filterCategoryId) return true;
-      
-      // 현재 카테고리의 하위 카테고리인지 확인
-      const isSubCategory = (currentCategory?.children || []).some(
-        (child: Category) => child.id === productCategoryId
-      );
-      
-      return targetCategory.id === filterCategoryId && isSubCategory;
-    });
-
-    console.log(`필터링 결과: ${filteredProducts.length}개 상품`);
-
-    return {
-      ...allProductsData,
-      products: filteredProducts,
-      pagination: {
-        ...allProductsData.pagination,
-        total_items: filteredProducts.length
-      }
-    };
-  }, [allProductsData, currentCategory, currentSubCategory, category, allCategories]);
+  );
 
   // 정렬 변경 핸들러
   const handleSortChange = (value: string) => {
