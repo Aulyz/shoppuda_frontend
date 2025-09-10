@@ -102,7 +102,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <Link
-      to={product.slug ? `/products/${product.slug}` : `/products/${product.id}`}
+      to={`/product/${product.id}`}
       className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:z-10 relative"
     >
       {/* 상품 이미지 */}
