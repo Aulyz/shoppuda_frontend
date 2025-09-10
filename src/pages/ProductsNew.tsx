@@ -17,29 +17,20 @@ function ProductsNew() {
     {
       retry: 3,
       retryDelay: 1000,
-      onSuccess: (data) => {
-        console.log('신상품 데이터:', data)
-      },
-      onError: (error) => {
-        console.error('신상품 로딩 에러:', error)
-      }
+      staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
     }
   )
 
-  // 신상품이 없을 경우 전체 상품에서 랜덤하게 가져오기
+  // 신상품이 없을 경우 전체 상품에서 가져오기
   const { data: fallbackProductsData, isLoading: isFallbackLoading } = useQuery(
     ['products-fallback'],
-    () => api.getProducts({ page: 1, limit: 50 }), // 더 많은 상품을 가져와서 랜덤 선택
+    () => api.getProducts({ page: 1, limit: 50 }),
     {
-      enabled: !isNewLoading && (!newProductsData?.products?.length && !newProductsData?.results?.length),
+      enabled: !isNewLoading && newProductsData && 
+               (!newProductsData?.products?.length && !newProductsData?.results?.length),
       retry: 3,
       retryDelay: 1000,
-      onSuccess: (data) => {
-        console.log('대체 상품 데이터:', data)
-      },
-      onError: (error) => {
-        console.error('대체 상품 로딩 에러:', error)
-      }
+      staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
     }
   )
 
@@ -47,29 +38,32 @@ function ProductsNew() {
   const newProducts = newProductsData?.results || newProductsData?.products || newProductsData?.data || []
   const fallbackProducts = fallbackProductsData?.results || fallbackProductsData?.products || fallbackProductsData?.data || []
 
-  // 신상품이 있으면 신상품을, 없으면 전체 상품에서 랜덤하게 선택
-  let productsToShow: any[] = []
-  let pageTitle = "상품 목록"
-  let isUsingFallback = false
+  // useMemo를 사용하여 상품 목록 메모이제이션
+  const { productsToShow, pageTitle, isUsingFallback, validProducts } = React.useMemo(() => {
+    let products: any[] = []
+    let title = "상품 목록"
+    let fallback = false
 
-  if (Array.isArray(newProducts) && newProducts.length > 0) {
-    productsToShow = newProducts
-    pageTitle = "최신 신상품"
-  } else if (Array.isArray(fallbackProducts) && fallbackProducts.length > 0) {
-    // 랜덤하게 12개 선택
-    const shuffled = [...fallbackProducts].sort(() => 0.5 - Math.random())
-    productsToShow = shuffled.slice(0, 12)
-    pageTitle = "추천 상품"
-    isUsingFallback = true
-  }
+    if (Array.isArray(newProducts) && newProducts.length > 0) {
+      products = newProducts
+      title = "최신 신상품"
+    } else if (Array.isArray(fallbackProducts) && fallbackProducts.length > 0) {
+      // 고정된 시드를 사용하여 일관된 랜덤 결과
+      const shuffled = [...fallbackProducts].sort((a, b) => a.id - b.id).slice(0, 12)
+      products = shuffled
+      title = "추천 상품"
+      fallback = true
+    }
 
-  // 유효한 상품만 필터링
-  const validProducts = productsToShow.filter(product => product && product.id)
+    const valid = products.filter(product => product && product.id)
 
-  console.log('신상품:', newProducts)
-  console.log('대체 상품:', fallbackProducts)
-  console.log('최종 표시 상품:', validProducts)
-  console.log('대체 모드:', isUsingFallback)
+    return {
+      productsToShow: products,
+      pageTitle: title,
+      isUsingFallback: fallback,
+      validProducts: valid
+    }
+  }, [newProducts, fallbackProducts])
 
   // 로딩 상태
   const isLoading = isNewLoading || isFallbackLoading
@@ -183,16 +177,19 @@ function ProductsNew() {
               {validProducts.map((product: any) => (
                 <Link
                   key={product.id}
-                  to={`/products/${product.id}`}
+                  to={`/product/${product.id}`}
                   className="group bg-white rounded-2xl shadow border border-gray-100 hover:shadow-xl transition-all duration-200"
                 >
                   <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-2xl bg-gray-100 relative">
                     <img
-                      src={product.image || product.thumbnail || '/placeholder.png'}
+                      src={product.image || product.thumbnail || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk0YTNiOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuyggeygge2DnOydtOyngDwvdGV4dD48L3N2Zz4='}
                       alt={product.name || product.title || '상품 이미지'}
                       className="h-56 w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder.png'
+                        const target = e.target as HTMLImageElement;
+                        if (target.src !== 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk0YTNiOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuygjeygge2DnOydtOyngDwvdGV4dD48L3N2Zz4=') {
+                          target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk0YTNiOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuygjeygge2DnOydtOyngDwvdGV4dD48L3N2Zz4=';
+                        }
                       }}
                     />
                     {(product.discount_price || product.sale_price) && product.price && (
@@ -258,34 +255,6 @@ function ProductsNew() {
           )}
         </section>
 
-        {/* 디버그 정보 */}
-        <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-          <h3 className="font-bold mb-2">디버그 정보:</h3>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <p className="font-semibold">신상품 데이터:</p>
-              <p>로딩: {isNewLoading ? 'Yes' : 'No'}</p>
-              <p>에러: {isNewError ? 'Yes' : 'No'}</p>
-              <p>상품 수: {newProducts.length}</p>
-            </div>
-            <div>
-              <p className="font-semibold">대체 상품 데이터:</p>
-              <p>로딩: {isFallbackLoading ? 'Yes' : 'No'}</p>
-              <p>상품 수: {fallbackProducts.length}</p>
-              <p>대체 모드: {isUsingFallback ? 'Yes' : 'No'}</p>
-            </div>
-          </div>
-          <p>최종 표시 상품 수: {validProducts.length}</p>
-          <p>페이지 제목: {pageTitle}</p>
-          <details className="mt-2">
-            <summary className="cursor-pointer font-semibold">전체 응답 데이터</summary>
-            <pre className="text-xs overflow-auto max-h-32 mt-2 bg-white p-2 rounded">
-              신상품: {JSON.stringify(newProductsData, null, 2)}
-              {'\n\n'}
-              대체상품: {JSON.stringify(fallbackProductsData, null, 2)}
-            </pre>
-          </details>
-        </div>
       </div>
     </div>
   )
