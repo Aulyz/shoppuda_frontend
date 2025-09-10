@@ -12,6 +12,9 @@
 # midea
 /images
 
+# claude
+/.claude
+
 # misc
 .DS_Store
 .env.local

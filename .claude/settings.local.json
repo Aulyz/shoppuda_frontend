@@ -47,7 +47,12 @@
       "Read(/C:\\Users\\Ryul8\\Desktop\\Coding\\shoppuda_frontend\\src\\components/**)",
       "Read(/C:\\Users\\Ryul8\\Desktop\\Coding\\shoppuda_frontend\\src\\pages/**)",
       "Read(/C:\\Users\\Ryul8\\Desktop\\Coding\\shoppuda_frontend\\src\\services/**)",
-      "Read(/C:\\Users\\Ryul8\\Desktop\\Coding\\shoppuda_frontend/**)"
+      "Read(/C:\\Users\\Ryul8\\Desktop\\Coding\\shoppuda_frontend/**)",
+      "Read(/C:\\Users\\Ryul8\\Desktop\\Coding\\shoppuda_frontend\\src\\components/**)",
+      "Read(/C:\\Users\\Ryul8\\Desktop\\Coding\\shoppuda_frontend\\src\\components/**)",
+      "Read(/C:\\Users\\Ryul8\\Desktop\\Coding\\shoppuda_frontend\\src\\components/**)",
+      "Read(/C:\\Users\\Ryul8\\Desktop\\Coding\\shoppuda_frontend\\src\\pages/**)",
+      "Read(/C:\\Users\\Ryul8\\Desktop\\Coding\\shoppuda_frontend\\src/**)"
     ],
     "deny": [],
     "ask": []

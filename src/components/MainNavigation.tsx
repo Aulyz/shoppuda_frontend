@@ -24,9 +24,14 @@ const MainNavigation = () => {
     () => api.getCategories()
   );
 
+  // 최상위 카테고리만 필터링
+  const topLevelCategories = categoriesData?.categories?.filter((category: Category) => 
+    category.parent === null
+  ) || [];
+
   const staticItems = [
     { name: '홈', href: '/', isStatic: true },
-    { name: '전체보기', href: '/products', isStatic: true },
+    { name: '전체보기', href: '/products', isStatic: true, hasDropdown: true },
     { name: '베스트', href: '/products/best', isStatic: true },
     { name: '신상품', href: '/products/new', isStatic: true },
     { name: '이벤트', href: '/products/sale', isStatic: true }
@@ -37,55 +42,51 @@ const MainNavigation = () => {
       <ul className="flex justify-center items-center space-x-6 text-gray-700 text-base font-medium py-2">
         {/* 정적 메뉴 아이템들 */}
         {staticItems.map((item, index) => (
-          <li key={`static-${index}`}>
-            <Link 
-              to={item.href} 
-              className={`pb-2 p-2 hover:text-black transition-colors ${
-                location.pathname === item.href ? 'border-b-2 border-[#EF9F9F]' : ''
-              }`}
+          <li 
+            key={`static-${index}`}
+            className={item.hasDropdown ? "relative" : ""}
+          >
+            <div
+              className={item.hasDropdown ? "relative" : ""}
+              onMouseEnter={item.hasDropdown ? () => setHoveredCategory(-1) : undefined}
+              onMouseLeave={item.hasDropdown ? () => setHoveredCategory(null) : undefined}
             >
-              {item.name}
-            </Link>
+              <Link 
+                to={item.href} 
+                className={`pb-2 p-2 hover:text-black transition-colors flex items-center space-x-1 ${
+                  location.pathname === item.href ? 'border-b-2 border-[#EF9F9F]' : ''
+                }`}
+              >
+                <span>{item.name}</span>
+                {item.hasDropdown && (
+                  <ChevronDownIcon className="h-3 w-3" />
+                )}
+              </Link>
+              
+              {/* 전체보기 카테고리 드롭다운 */}
+              {item.hasDropdown && topLevelCategories.length > 0 && hoveredCategory === -1 && (
+                <div className="absolute top-full left-0 pt-2 z-50">
+                  <div className="w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
+                    {topLevelCategories.map((category: Category) => (
+                      <Link
+                        key={category.id}
+                        to={`/products/${category.code}`}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                        onClick={() => setHoveredCategory(null)}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <i className={`${category.icon} text-xs`}></i>
+                          <span>{category.name}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </li>
         ))}
         
-        {/* 카테고리 드롭다운 */}
-        {categoriesData?.categories?.slice(0, 5).map((category: Category) => (
-          <li 
-            key={category.id}
-            className="relative group"
-            onMouseEnter={() => setHoveredCategory(category.id)}
-            onMouseLeave={() => setHoveredCategory(null)}
-          >
-            <Link 
-              to={`/products?category=${encodeURIComponent(category.name)}`}
-              className="pb-2 p-2 hover:text-black transition-colors flex items-center space-x-1"
-            >
-              <span>{category.name}</span>
-              {category.children && category.children.length > 0 && (
-                <ChevronDownIcon className="h-3 w-3" />
-              )}
-            </Link>
-            
-            {/* 하위 카테고리 드롭다운 */}
-            {category.children && category.children.length > 0 && hoveredCategory === category.id && (
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                {category.children.map((child) => (
-                  <Link
-                    key={child.id}
-                    to={`/products?category=${encodeURIComponent(child.name)}`}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <i className={`${child.icon} text-xs`}></i>
-                      <span>{child.name}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </li>
-        ))}
         
         {/* Q&A 메뉴 */}
         <li>

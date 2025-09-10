@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { api } from '../services/api'
 import { FunnelIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
@@ -15,8 +15,9 @@ interface Category {
   children: Category[]
 }
 
-function ProductsAll() {
+function CategoryProducts() {
   // URL 파라미터 관리
+  const { categoryCode } = useParams<{ categoryCode: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const [showFilters, setShowFilters] = useState(false)
   const [expandedCategories, setExpandedCategories] = useState<number[]>([])
@@ -31,16 +32,31 @@ function ProductsAll() {
   const sort = searchParams.get('sort') || ''
   const page = parseInt(searchParams.get('page') || '1')
 
-  // 상품 목록 조회
-  const { data, isLoading } = useQuery(
-    ['products', category, sort, page],
-    () => api.getProducts({ category, ordering: sort, page })
-  )
-
   // 카테고리 목록 조회
   const { data: categoriesData } = useQuery(
     'categories',
     () => api.getCategories()
+  )
+
+  // 현재 카테고리 정보 찾기
+  const currentTopCategory = categoriesData?.categories?.find((cat: Category) => 
+    cat.code === categoryCode && cat.parent === null
+  )
+
+  // 현재 카테고리의 하위 카테고리들
+  const subCategories = currentTopCategory?.children || []
+
+  // 상품 목록 조회 (카테고리 코드 기반)
+  const { data, isLoading } = useQuery(
+    ['categoryProducts', categoryCode, category, sort, page],
+    () => api.getProducts({ 
+      category: category || currentTopCategory?.name, 
+      ordering: sort, 
+      page 
+    }),
+    {
+      enabled: !!currentTopCategory // 현재 카테고리가 있을 때만 조회
+    }
   )
 
   // 정렬 변경 핸들러
@@ -51,7 +67,7 @@ function ProductsAll() {
     } else {
       newParams.delete('sort')
     }
-    newParams.set('page', '1') // 정렬 변경 시 첫 페이지로 이동
+    newParams.set('page', '1')
     setSearchParams(newParams)
   }
 
@@ -63,7 +79,7 @@ function ProductsAll() {
     } else {
       newParams.delete('category')
     }
-    newParams.set('page', '1') // 카테고리 변경 시 첫 페이지로 이동
+    newParams.set('page', '1')
     setSearchParams(newParams)
   }
 
@@ -83,8 +99,8 @@ function ProductsAll() {
     )
   }
 
-  // 카테고리 렌더링 함수
-  const renderCategory = (cat: Category, level: number = 0) => {
+  // 하위 카테고리 렌더링 함수
+  const renderSubCategory = (cat: Category, level: number = 0) => {
     const hasChildren = cat.children && cat.children.length > 0
     const isExpanded = expandedCategories.includes(cat.id)
     const isSelected = category === cat.name
@@ -93,7 +109,7 @@ function ProductsAll() {
       <div key={cat.id}>
         <button
           onClick={() => {
-            if (hasChildren && level === 0) {
+            if (hasChildren) {
               toggleCategoryExpand(cat.id)
             }
             handleCategoryChange(cat.name)
@@ -109,7 +125,7 @@ function ProductsAll() {
             <i className={`${cat.icon} text-sm`}></i>
             <span>{cat.name}</span>
           </div>
-          {hasChildren && level === 0 && (
+          {hasChildren && (
             <span onClick={(e) => {
               e.stopPropagation()
               toggleCategoryExpand(cat.id)
@@ -124,9 +140,23 @@ function ProductsAll() {
         </button>
         {hasChildren && isExpanded && (
           <div className="mt-1">
-            {cat.children.map(child => renderCategory(child, level + 1))}
+            {cat.children.map(child => renderSubCategory(child, level + 1))}
           </div>
         )}
+      </div>
+    )
+  }
+
+  // 현재 카테고리가 없으면 404 처리
+  if (!currentTopCategory && categoriesData?.categories) {
+    return (
+      <div className="bg-gradient-to-br from-orange-50 via-white to-pink-50 min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center py-16">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">카테고리를 찾을 수 없습니다</h1>
+            <p className="text-gray-500">올바른 카테고리 경로인지 확인해주세요.</p>
+          </div>
+        </div>
       </div>
     )
   }
@@ -139,9 +169,9 @@ function ProductsAll() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
-              상품
+              {currentTopCategory?.name || '카테고리'}
             </h1>
-            <p className="text-gray-500 mt-2">쇼푸다의 다양한 상품을 만나보세요</p>
+            <p className="text-gray-500 mt-2">{currentTopCategory?.name} 카테고리의 다양한 상품을 만나보세요</p>
           </div>
           
           {/* 정렬 및 필터 컨트롤 */}
@@ -167,11 +197,36 @@ function ProductsAll() {
           </div>
         </div>
 
-        {/* 상품 그리드 - 전체 너비 사용 */}
-        <div>
-          {isLoading ? (
-            /* 로딩 스켈레톤 */
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="flex gap-8">
+          
+          {/* 사이드바 - 하위 카테고리 필터 */}
+          <aside className={`${showFilters ? 'block' : 'hidden'} md:block w-64 flex-shrink-0`}>
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 sticky top-8">
+              <h3 className="font-bold text-xl text-gray-900 mb-6">카테고리</h3>
+              <div className="space-y-1">
+                <button
+                  onClick={() => handleCategoryChange('')}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 ${
+                    !category 
+                      ? 'bg-gradient-to-r from-orange-100 to-pink-100 text-orange-700 font-semibold' 
+                      : 'hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2">
+                    <i className="fas fa-th-large text-sm"></i>
+                    <span>전체 {currentTopCategory?.name}</span>
+                  </div>
+                </button>
+                {subCategories.map((cat: Category) => renderSubCategory(cat))}
+              </div>
+            </div>
+          </aside>
+
+          {/* 상품 그리드 */}
+          <div className="flex-1">
+            {isLoading ? (
+              /* 로딩 스켈레톤 */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(9)].map((_, i) => (
                   <div key={i} className="animate-pulse">
                     <div className="bg-gray-200 h-64 rounded-2xl mb-4"></div>
@@ -181,9 +236,9 @@ function ProductsAll() {
                 ))}
               </div>
             ) : (
-            <>
-              {/* 상품 목록 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+              <>
+                {/* 상품 목록 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                   {data?.products?.map((product: any) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
@@ -221,24 +276,25 @@ function ProductsAll() {
                   </div>
                 )}
 
-              {/* 상품이 없을 때 */}
-              {data?.products?.length === 0 && (
-                <div className="text-center py-16">
-                  <div className="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
-                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
+                {/* 상품이 없을 때 */}
+                {data?.products?.length === 0 && (
+                  <div className="text-center py-16">
+                    <div className="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
+                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">상품이 없습니다</h3>
+                    <p className="text-gray-500">다른 카테고리를 선택하거나 검색어를 변경해 보세요</p>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">상품이 없습니다</h3>
-                  <p className="text-gray-500">검색어를 변경하거나 다른 조건으로 검색해 보세요</p>
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-export default ProductsAll
+export default CategoryProducts

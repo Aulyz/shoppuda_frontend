@@ -16,6 +16,7 @@ import Wishlist from './pages/Wishlist'
 import QnA from './pages/QnA'
 import ProductsNew from './pages/ProductsNew'
 import ProductsSale from './pages/ProductsSale'
+import CategoryProducts from './pages/CategoryProducts'
 import Orders from './pages/Orders'
 import Support from './pages/Support'
 import { useAuthStore } from './store/authStore'
@@ -157,7 +158,8 @@ function App() {
             <Route path="/products/best" element={<ProductsBest />} />
             <Route path="/products/new" element={<ProductsNew />} />
             <Route path="/products/sale" element={<ProductsSale />} />
-            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/products/:categoryCode" element={<CategoryProducts />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/login" element={<Login />} />
