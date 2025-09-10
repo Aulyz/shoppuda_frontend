@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from 'react-query';
 import toast from 'react-hot-toast';
@@ -129,7 +129,20 @@ function SignUp() {
       }
     } catch (err: any) {
       console.error('ID check error:', err);
-      setIdCheckResult('중복 확인에 실패했습니다.');
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      console.error('Error config:', err.config);
+      
+      // 더 구체적인 에러 메시지 제공
+      if (err.response?.status === 404) {
+        setIdCheckResult('중복 확인 서비스가 일시적으로 사용할 수 없습니다.');
+      } else if (err.response?.status >= 500) {
+        setIdCheckResult('서버 오류로 중복 확인에 실패했습니다.');
+      } else if (err.code === 'ECONNREFUSED' || err.message.includes('Network Error')) {
+        setIdCheckResult('네트워크 연결을 확인해주세요.');
+      } else {
+        setIdCheckResult('중복 확인에 실패했습니다. 다시 시도해주세요.');
+      }
       setIsIdChecked(false);
     }
   };
