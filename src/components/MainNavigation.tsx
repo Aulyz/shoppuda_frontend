@@ -29,18 +29,15 @@ const MainNavigation = () => {
     category.parent === null
   ) || [];
 
-  // 카테고리의 URL-safe 코드 생성 함수
-  const getCategoryUrlCode = (category: Category): string => {
-    // API에서 code가 있으면 사용하고, 없으면 name을 기반으로 생성
-    if (category.code && category.code !== '') {
-      return category.code.replace(/^_/, 'cat'); // "_1" -> "cat1"
-    }
-    
-    // code가 없거나 빈 문자열이면 name을 URL-safe하게 변환
-    return category.name.toLowerCase()
+  // 카테고리의 URL 경로 생성 함수
+  const getCategoryUrlPath = (category: Category): string => {
+    // 카테고리 이름을 URL-safe하게 변환
+    const urlSafeName = category.name.toLowerCase()
       .replace(/\s+/g, '-')
       .replace(/[^\w\-가-힣]/g, '')
-      .replace(/^-+|-+$/g, ''); // 앞뒤 하이픈 제거
+      .replace(/^-+|-+$/g, '');
+    
+    return `/category/${encodeURIComponent(urlSafeName)}`;
   };
 
   const staticItems = [
@@ -77,23 +74,49 @@ const MainNavigation = () => {
                 )}
               </Link>
               
-              {/* 전체보기 카테고리 드롭다운 */}
+              {/* 전체보기 카테고리 드롭다운 - 최상위 카테고리만 표시 */}
               {item.hasDropdown && topLevelCategories.length > 0 && hoveredCategory === -1 && (
                 <div className="absolute top-full left-0 pt-2 z-50">
-                  <div className="w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
-                    {topLevelCategories.map((category: Category) => (
+                  <div className="w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-3">
+                    <div className="px-4 pb-2 mb-2 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">카테고리</p>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {topLevelCategories.map((category: Category) => (
+                        <Link
+                          key={category.id}
+                          to={getCategoryUrlPath(category)}
+                          className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-pink-50 hover:text-orange-600 transition-all duration-200 group"
+                          onClick={() => setHoveredCategory(null)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <i className={`${category.icon || 'fas fa-folder'} text-xs group-hover:text-orange-500`}></i>
+                              <span className="font-medium">{category.name}</span>
+                            </div>
+                            {category.children && category.children.length > 0 && (
+                              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                                {category.children.length}
+                              </span>
+                            )}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="border-t border-gray-100 mt-2 pt-2">
                       <Link
-                        key={category.id}
-                        to={`/products/${getCategoryUrlCode(category)}`}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                        to="/products"
+                        className="block px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 transition-colors"
                         onClick={() => setHoveredCategory(null)}
                       >
-                        <div className="flex items-center space-x-2">
-                          <i className={`${category.icon} text-xs`}></i>
-                          <span>{category.name}</span>
+                        <div className="flex items-center justify-center space-x-2">
+                          <span>모든 상품 보기</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
                         </div>
                       </Link>
-                    ))}
+                    </div>
                   </div>
                 </div>
               )}
