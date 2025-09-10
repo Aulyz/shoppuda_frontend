@@ -17,6 +17,7 @@ import QnA from './pages/QnA'
 import ProductsNew from './pages/ProductsNew'
 import ProductsSale from './pages/ProductsSale'
 import Orders from './pages/Orders'
+import Support from './pages/Support'
 import { useAuthStore } from './store/authStore'
 import LoginSuccess from './pages/LoginSuccess'
 import KakaoNameInput from './pages/KakaoNameInput'
@@ -165,6 +166,7 @@ function App() {
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/qna" element={<QnA />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/support" element={<Support />} />
             <Route path="/recently-viewed" element={<RecentlyViewed />} />
             <Route path="/kakao/callback" element={<KakaoAuthHandler />} />
             <Route path="/login/success" element={<LoginSuccess />} />

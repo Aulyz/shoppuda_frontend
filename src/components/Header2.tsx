@@ -93,7 +93,7 @@ const Header2 = () => {
           <span className="text-gray-300">|</span>
           <Link to="/recently-viewed" className="hover:text-gray-900 transition-colors">최근본상품</Link>
           <span className="text-gray-300">|</span>
-          <Link to="/customer" className="hover:text-gray-900 transition-colors">고객센터</Link>
+          <Link to="/support" className="hover:text-gray-900 transition-colors">고객센터</Link>
         </div>
       </div>
 
@@ -354,7 +354,7 @@ const Header2 = () => {
           {/* Customer Service */}
           <div className="mt-6 pt-6 border-t space-y-1">
             <Link 
-              to="/customer" 
+              to="/support" 
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2.5 text-base text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
             >
