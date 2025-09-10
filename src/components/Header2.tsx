@@ -122,11 +122,7 @@ const Header2 = () => {
                 alt="SHOPPUDA Logo" 
                 className="w-32 sm:w-36 md:w-44 lg:w-48 h-auto"
               />
-              <img 
-                src="/Images/Logo_bt.png" 
-                alt="Brand Message" 
-                className="h-3 sm:h-4 w-auto mt-1"
-              />
+              <span className="text-base font-medium text-gray-700 mt-2 tracking-wide">해외 쇼핑, 클릭 한 번으로</span>
             </Link>
           </div>
 

@@ -168,6 +168,11 @@ function ProductsAll() {
         </div>
 
         {/* 상품 그리드 - 전체 너비 사용 */}
+        {/* Render Categories */}
+        <div className="mb-8">
+          {Array.isArray(categoriesData) && categoriesData.map((category: Category) => renderCategory(category))}
+        </div>
+
         <div>
           {isLoading ? (
             /* 로딩 스켈레톤 */
