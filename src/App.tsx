@@ -158,8 +158,7 @@ function App() {
             <Route path="/products/best" element={<ProductsBest />} />
             <Route path="/products/new" element={<ProductsNew />} />
             <Route path="/products/sale" element={<ProductsSale />} />
-            <Route path="/products/:categoryCode" element={<CategoryProducts />} />
-            <Route path="/products/:categoryCode/:subCategoryCode" element={<CategoryProducts />} />
+            <Route path="/category/*" element={<CategoryProducts />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />

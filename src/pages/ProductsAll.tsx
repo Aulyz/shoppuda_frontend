@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useQuery } from 'react-query'
 import { api } from '../services/api'
-import { FunnelIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { 
+  FunnelIcon, 
+  ChevronRightIcon,
+  TagIcon
+} from '@heroicons/react/24/outline'
 import ProductCard from '../components/ProductCard'
 
 interface Category {
@@ -13,232 +16,251 @@ interface Category {
   full_path: string
   icon: string
   children: Category[]
+  product_count?: number
+}
+
+interface Product {
+  id: string
+  name: string
+  price: string
+  category: {
+    id: number
+    name: string
+    code: string
+  }
+  brand: string | null
+  brand_name?: string
+  thumbnail?: string
+  discount_price: string | null
+  is_new?: boolean
+  is_best?: boolean
+  is_featured?: boolean
+  stock: number
+  stock_quantity?: number
+  short_description: string
 }
 
 function ProductsAll() {
-  // URL 파라미터 관리
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [showFilters, setShowFilters] = useState(false)
-  const [expandedCategories, setExpandedCategories] = useState<number[]>([])
+  const [hoveredCategory, setHoveredCategory] = useState<number | null>(null)
+  const [selectedSort, setSelectedSort] = useState('newest')
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
   
   // 페이지 접속 시 맨 위로 스크롤
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
-  
-  // URL 파라미터 추출
-  const category = searchParams.get('category') || ''
-  const sort = searchParams.get('sort') || ''
-  const page = parseInt(searchParams.get('page') || '1')
-
-  // 상품 목록 조회 (전체 상품 - 카테고리 필터 없음)
-  const { data, isLoading } = useQuery(
-    ['products', sort, page], // category 제거
-    () => api.getProducts({ ordering: sort, page }) // category 파라미터 제거
-  )
 
   // 카테고리 목록 조회
-  const { data: categoriesData } = useQuery(
+  const { data: categoriesData, isLoading: categoriesLoading } = useQuery(
     'categories',
     () => api.getCategories()
   )
 
-  // 정렬 변경 핸들러
-  const handleSortChange = (value: string) => {
-    const newParams = new URLSearchParams(searchParams)
-    if (value) {
-      newParams.set('sort', value)
-    } else {
-      newParams.delete('sort')
+  const allCategories = categoriesData?.categories || []
+
+  // 상품 목록 조회
+  const { data: productsData, isLoading: productsLoading } = useQuery(
+    ['products', selectedSort],
+    async () => {
+      const response = await api.getProducts({ 
+        ordering: selectedSort === 'newest' ? '-created_at' : 
+                  selectedSort === 'price_low' ? 'selling_price' : 
+                  selectedSort === 'price_high' ? '-selling_price' : 
+                  selectedSort === 'best' ? '-is_best' : '',
+        page_size: 1000 // 충분히 큰 수로 설정
+      })
+      return response
     }
-    newParams.set('page', '1') // 정렬 변경 시 첫 페이지로 이동
-    setSearchParams(newParams)
-  }
+  )
 
-  // 카테고리 변경 핸들러
-  const handleCategoryChange = (value: string) => {
-    const newParams = new URLSearchParams(searchParams)
-    if (value) {
-      newParams.set('category', value)
-    } else {
-      newParams.delete('category')
+  // 선택된 카테고리와 그 하위 카테고리의 ID 수집
+  const getCategoryAndDescendantIds = (category: Category): number[] => {
+    const ids = [category.id]
+    if (category.children) {
+      category.children.forEach(child => {
+        ids.push(...getCategoryAndDescendantIds(child))
+      })
     }
-    newParams.set('page', '1') // 카테고리 변경 시 첫 페이지로 이동
-    setSearchParams(newParams)
+    return ids
   }
 
-  // 페이지 변경 핸들러
-  const handlePageChange = (newPage: number) => {
-    const newParams = new URLSearchParams(searchParams)
-    newParams.set('page', String(newPage))
-    setSearchParams(newParams)
+  // 카테고리별 상품 필터링
+  const filteredProducts = useMemo(() => {
+    if (!productsData?.products) return []
+    
+    if (!selectedCategoryId) {
+      return productsData.products
+    }
+    
+    const selectedCategory = allCategories.find((cat: Category) => cat.id === selectedCategoryId)
+    if (!selectedCategory) return productsData.products
+    
+    const categoryIds = getCategoryAndDescendantIds(selectedCategory)
+    
+    return productsData.products.filter((product: Product) => 
+      categoryIds.includes(product.category.id)
+    )
+  }, [productsData, selectedCategoryId, allCategories])
+
+  // 카테고리 필터 선택
+  const handleCategoryFilter = (categoryId: number | null) => {
+    setSelectedCategoryId(categoryId)
+    setHoveredCategory(null)
   }
 
-  // 카테고리 확장/축소 토글
-  const toggleCategoryExpand = (categoryId: number) => {
-    setExpandedCategories(prev => 
-      prev.includes(categoryId) 
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
+  // 하위 카테고리 드롭다운 렌더링
+  const renderSubcategoryDropdown = (category: Category, level: number = 0) => {
+    if (!category.children || category.children.length === 0) return null
+    
+    return (
+      <>
+        {/* 보이지 않는 브릿지 - hover 유지용 */}
+        <div className={`absolute ${level === 0 ? 'left-full' : 'left-full'} top-0 w-2 h-full z-40`} />
+        <div 
+          className={`absolute ${level === 0 ? 'left-full' : 'left-full'} top-0 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50`}
+          onMouseEnter={(e) => e.stopPropagation()}
+        >
+        {category.children.map(child => (
+          <div
+            key={child.id}
+            className="relative"
+            onMouseEnter={() => setHoveredCategory(child.id)}
+            onMouseLeave={() => setHoveredCategory(null)}
+          >
+            <div
+              className={`px-4 py-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between ${
+                selectedCategoryId === child.id ? 'bg-orange-50 text-orange-600' : ''
+              }`}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleCategoryFilter(child.id)
+              }}
+            >
+              <span className="text-sm">{child.name}</span>
+              {child.children && child.children.length > 0 && (
+                <ChevronRightIcon className="h-3 w-3 text-gray-400" />
+              )}
+            </div>
+            {hoveredCategory === child.id && renderSubcategoryDropdown(child, level + 1)}
+          </div>
+        ))}
+        </div>
+      </>
     )
   }
 
-  // 카테고리 렌더링 함수
-  const renderCategory = (cat: Category, level: number = 0) => {
-    const hasChildren = cat.children && cat.children.length > 0
-    const isExpanded = expandedCategories.includes(cat.id)
-    const isSelected = category === cat.name
-
+  if (categoriesLoading || productsLoading) {
     return (
-      <div key={cat.id}>
-        <button
-          onClick={() => {
-            if (hasChildren && level === 0) {
-              toggleCategoryExpand(cat.id)
-            }
-            handleCategoryChange(cat.name)
-          }}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
-            isSelected
-              ? 'bg-gradient-to-r from-orange-100 to-pink-100 text-orange-700 font-semibold' 
-              : 'hover:bg-gray-50 text-gray-700'
-          }`}
-          style={{ paddingLeft: `${(level * 16) + 16}px` }}
-        >
-          <div className="flex items-center space-x-2">
-            <i className={`${cat.icon} text-sm`}></i>
-            <span>{cat.name}</span>
-          </div>
-          {hasChildren && level === 0 && (
-            <span onClick={(e) => {
-              e.stopPropagation()
-              toggleCategoryExpand(cat.id)
-            }}>
-              {isExpanded ? (
-                <ChevronDownIcon className="h-4 w-4" />
-              ) : (
-                <ChevronRightIcon className="h-4 w-4" />
-              )}
-            </span>
-          )}
-        </button>
-        {hasChildren && isExpanded && (
-          <div className="mt-1">
-            {cat.children.map(child => renderCategory(child, level + 1))}
-          </div>
-        )}
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
     )
   }
 
   return (
-    <div className="bg-gradient-to-br from-orange-50 via-white to-pink-50 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* 페이지 헤더 */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
-              상품
-            </h1>
-            <p className="text-gray-500 mt-2">쇼푸다의 다양한 상품을 만나보세요</p>
-          </div>
-          
-          {/* 정렬 및 필터 컨트롤 */}
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="md:hidden flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-            >
-              <FunnelIcon className="h-5 w-5" />
-              <span>필터</span>
-            </button>
-            <select
-              value={sort}
-              onChange={(e) => handleSortChange(e.target.value)}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition-all duration-200"
-            >
-              <option value="">정렬 기준</option>
-              <option value="-created_at">최신순</option>
-              <option value="price">낮은 가격순</option>
-              <option value="-price">높은 가격순</option>
-              <option value="-sales_count">인기순</option>
-            </select>
-          </div>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      {/* 페이지 타이틀 */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          전체 상품
+        </h1>
+        <p className="text-gray-600">
+          모든 카테고리의 상품을 확인하세요
+        </p>
+      </div>
 
-        {/* 상품 그리드 - 전체 너비 사용 */}
-        {/* Render Categories */}
-        <div className="mb-8">
-          {Array.isArray(categoriesData) && categoriesData.map((category: Category) => renderCategory(category))}
-        </div>
-
-        <div>
-          {isLoading ? (
-            /* 로딩 스켈레톤 */
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {[...Array(9)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="bg-gray-200 h-64 rounded-2xl mb-4"></div>
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      <div className="flex gap-8">
+        {/* 왼쪽 사이드바 - 카테고리 네비게이션 */}
+        <aside className="w-64 flex-shrink-0">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <h3 className="font-semibold text-lg mb-4 flex items-center">
+              <TagIcon className="h-5 w-5 mr-2" />
+              카테고리
+            </h3>
+            <div className="mb-3">
+              <button
+                onClick={() => handleCategoryFilter(null)}
+                className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                  !selectedCategoryId ? 'bg-orange-100 text-orange-600 font-semibold' : 'hover:bg-gray-50'
+                }`}
+              >
+                전체 상품
+              </button>
+            </div>
+            <div className="space-y-1">
+              {allCategories.filter((cat: Category) => !cat.parent).map(category => (
+                <div
+                  key={category.id}
+                  className="relative"
+                  onMouseEnter={() => setHoveredCategory(category.id)}
+                  onMouseLeave={() => setHoveredCategory(null)}
+                >
+                  <div
+                    className={`px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer flex items-center justify-between ${
+                      selectedCategoryId === category.id ? 'bg-orange-100 text-orange-600 font-semibold' : ''
+                    }`}
+                    onClick={() => handleCategoryFilter(category.id)}
+                  >
+                    <span>{category.name}</span>
+                    {category.children && category.children.length > 0 && (
+                      <ChevronRightIcon className="h-4 w-4 text-gray-400" />
+                    )}
                   </div>
-                ))}
+                  {hoveredCategory === category.id && renderSubcategoryDropdown(category)}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 필터 섹션 */}
+          <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <h3 className="font-semibold text-lg mb-4 flex items-center">
+              <FunnelIcon className="h-5 w-5 mr-2" />
+              필터
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  정렬
+                </label>
+                <select 
+                  value={selectedSort}
+                  onChange={(e) => setSelectedSort(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="newest">최신순</option>
+                  <option value="best">인기순</option>
+                  <option value="price_low">낮은 가격순</option>
+                  <option value="price_high">높은 가격순</option>
+                </select>
               </div>
-            ) : (
-            <>
-              {/* 상품 목록 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                  {data?.products?.map((product: any) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
+            </div>
+          </div>
+        </aside>
 
-                {/* 페이지네이션 */}
-                {data?.pagination?.total_items > 0 && (
-                  <div className="flex justify-center">
-                    <nav className="flex items-center space-x-2">
-                      {/* 이전 페이지 버튼 */}
-                      {data.pagination.has_previous && (
-                        <button
-                          onClick={() => handlePageChange(page - 1)}
-                          className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-colors duration-200"
-                        >
-                          이전
-                        </button>
-                      )}
-                      
-                      {/* 페이지 정보 */}
-                      <div className="px-4 py-2 bg-gradient-to-r from-orange-100 to-pink-100 border border-orange-200 rounded-lg font-semibold text-orange-700">
-                        {data.pagination.current_page} / {data.pagination.total_pages}
-                      </div>
-                      
-                      {/* 다음 페이지 버튼 */}
-                      {data.pagination.has_next && (
-                        <button
-                          onClick={() => handlePageChange(page + 1)}
-                          className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-colors duration-200"
-                        >
-                          다음
-                        </button>
-                      )}
-                    </nav>
-                  </div>
-                )}
+        {/* 오른쪽 상품 목록 */}
+        <div className="flex-1">
+          {/* 상품 개수 및 정렬 */}
+          <div className="flex justify-between items-center mb-6">
+            <p className="text-gray-600">
+              총 <span className="font-semibold text-orange-500">{filteredProducts.length}</span>개의 상품
+            </p>
+          </div>
 
-              {/* 상품이 없을 때 */}
-              {data?.products?.length === 0 && (
-                <div className="text-center py-16">
-                  <div className="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
-                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">상품이 없습니다</h3>
-                  <p className="text-gray-500">검색어를 변경하거나 다른 조건으로 검색해 보세요</p>
-                </div>
-              )}
-            </>
+          {/* 상품 그리드 */}
+          {filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {filteredProducts.map((product: Product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <TagIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">
+                상품이 없습니다.
+              </p>
+            </div>
           )}
         </div>
       </div>
