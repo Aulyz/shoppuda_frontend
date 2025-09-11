@@ -31,6 +31,7 @@ const Header2 = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // 이미지 사전 로드
@@ -61,6 +62,43 @@ const Header2 = () => {
       document.body.style.width = '';
     };
   }, [mobileMenuOpen]);
+
+  // 검색 관련 이벤트 핸들러
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setShowSuggestions(false);
+      setSearchQuery("");
+      setMobileSearchOpen(false);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setShowSuggestions(true);
+  };
+
+  const handleSearchFocus = () => {
+    setShowSuggestions(true);
+  };
+
+  // 검색창 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+      if (mobileSearchRef.current && !mobileSearchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -160,23 +198,42 @@ const Header2 = () => {
           </div>
 
           {/* Desktop Search Bar */}
-          <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
-            <div className="relative w-full">
+          <div className="hidden lg:flex flex-1 max-w-2xl mx-8" ref={searchRef}>
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
               <input
                 type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={handleSearchFocus}
                 placeholder="상품을 검색해보세요"
                 className="w-full px-4 py-2.5 pr-10 border border-gray-300 rounded-full focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
               />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 rounded-full transition-colors">
+              <button 
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+              >
                 <MagnifyingGlassIcon className="h-5 w-5 text-gray-600" />
               </button>
-            </div>
+              <SearchSuggestions
+                isVisible={showSuggestions}
+                searchQuery={searchQuery}
+                onClose={() => setShowSuggestions(false)}
+                onSearch={(query) => {
+                  setSearchQuery(query);
+                  handleSearchSubmit();
+                }}
+              />
+            </form>
           </div>
 
           {/* Icons Section */}
           <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
             {/* Mobile Search Icon */}
-            <button className="lg:hidden p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="Search">
+            <button 
+              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+              className="lg:hidden p-2 hover:bg-gray-100 rounded-full transition-colors" 
+              aria-label="Search"
+            >
               <MagnifyingGlassIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
             </button>
 
@@ -237,18 +294,36 @@ const Header2 = () => {
         </div>
 
         {/* Mobile Search Bar */}
-        <div className="lg:hidden px-4 pb-3">
-          <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="상품을 검색해보세요"
-              className="w-full px-4 py-2 pr-10 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
-            />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5">
-              <MagnifyingGlassIcon className="h-4 w-4 text-gray-600" />
-            </button>
+        {mobileSearchOpen && (
+          <div className="lg:hidden px-4 pb-3" ref={mobileSearchRef}>
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={handleSearchFocus}
+                placeholder="상품을 검색해보세요"
+                className="w-full px-4 py-2 pr-10 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+                autoFocus
+              />
+              <button 
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5"
+              >
+                <MagnifyingGlassIcon className="h-4 w-4 text-gray-600" />
+              </button>
+              <SearchSuggestions
+                isVisible={showSuggestions}
+                searchQuery={searchQuery}
+                onClose={() => setShowSuggestions(false)}
+                onSearch={(query) => {
+                  setSearchQuery(query);
+                  handleSearchSubmit();
+                }}
+              />
+            </form>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ===== Desktop Navigation ===== */}

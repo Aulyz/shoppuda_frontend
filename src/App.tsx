@@ -20,6 +20,7 @@ import ProductsSale from './pages/ProductsSale'
 import CategoryProducts from './pages/CategoryProducts'
 import Orders from './pages/Orders'
 import Support from './pages/Support'
+import SearchResults from './pages/SearchResults'
 import { useAuthStore } from './store/authStore'
 import LoginSuccess from './pages/LoginSuccess'
 import KakaoNameInput from './pages/KakaoNameInput'
@@ -161,6 +162,7 @@ function App() {
             <Route path="/products/sale" element={<ProductsSale />} />
             <Route path="/category/*" element={<CategoryProducts />} />
             <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/search" element={<SearchResults />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/login" element={<Login />} />

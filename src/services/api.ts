@@ -193,6 +193,20 @@ export const api = {
   resendVerificationCode: (data: { email: string }) =>
     axios.post(`http://shoppuda.kro.kr:8001/accounts/api/password-reset/resend/`, data).then((res) => res.data),
 
+  // Search APIs
+  searchProducts: (query: string, params?: any) =>
+    axiosInstance.get(`/shop/products/search/`, { 
+      params: { q: query, ...params } 
+    }).then((res) => res.data),
+  
+  getSearchSuggestions: (query: string) =>
+    axiosInstance.get(`/shop/products/suggestions/`, { 
+      params: { q: query } 
+    }).then((res) => res.data),
+  
+  getPopularSearches: () =>
+    axiosInstance.get(`/shop/products/popular-searches/`).then((res) => res.data),
+
   // Django 모델 그대로 가져오기
   getSettings: () => axiosInstance.get(`/core/get-settings`).then((res) => {
     return res.data
