@@ -43,7 +43,7 @@ function ProductsSale() {
     }
 
     updateTimer()
-    const timer = setInterval(updateTimer, 1000)
+    const timer = setInterval(updateTimer, 5000)
 
     return () => clearInterval(timer)
   }, [])
