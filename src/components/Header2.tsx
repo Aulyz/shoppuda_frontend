@@ -30,7 +30,7 @@ const Header2 = () => {
     img.src = "/Images/Shoppuda_logo.png";
     img.onload = () => setLogoLoaded(true);
 
-    const timer = setTimeout(() => setShowGif(false), 1000);
+    const timer = setTimeout(() => setShowGif(false), 1500);  // 1초 → 1.5초로 증가
     return () => clearTimeout(timer);
   }, []);
 
@@ -128,7 +128,7 @@ const Header2 = () => {
                 <img 
                   src="/Images/Logo_Shoppuda.gif"
                   alt="SHOPPUDA Logo" 
-                  className={`absolute inset-0 w-full h-full object-contain transition-all duration-500 ${
+                  className={`absolute inset-0 w-full h-full object-contain transition-all duration-700 ${
                     showGif ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                   }`}
                   style={{ display: showGif ? 'block' : 'none' }}
@@ -137,12 +137,12 @@ const Header2 = () => {
                 <img 
                   src="/Images/Shoppuda_logo.png"
                   alt="SHOPPUDA Logo" 
-                  className={`absolute inset-0 w-full h-full object-contain transition-all duration-700 ${
+                  className={`absolute inset-0 w-full h-full object-contain transition-all duration-1000 ${
                     !showGif && logoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
                   }`}
                   style={{ 
                     display: !showGif ? 'block' : 'none',
-                    animation: !showGif && logoLoaded ? 'fadeInScale 0.7s ease-out' : 'none'
+                    animation: !showGif && logoLoaded ? 'fadeInScale 1s ease-out' : 'none'
                   }}
                 />
               </div>
