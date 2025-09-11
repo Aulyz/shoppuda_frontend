@@ -7,16 +7,19 @@ import toast from 'react-hot-toast';
 
 function ForgotPassword() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<'email' | 'token' | 'reset'>('email');
+  const [step, setStep] = useState<'email' | 'verify' | 'reset'>('email');
   const [email, setEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [uid, setUid] = useState('');
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
 
-  // 이메일로 토큰 발송
+  // 이메일로 인증 코드 발송
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -30,36 +33,64 @@ function ForgotPassword() {
     try {
       const response = await api.resetPassword({ email });
       
-      if (response.status || response.success) {
-        setStep('token');
-        toast.success('인증 코드가 이메일로 발송되었습니다.');
-      } else {
-        toast.error(response.message || '이메일 발송에 실패했습니다.');
+      if (response.message) {
+        setStep('verify');
+        toast.success(response.message);
+        // 재전송 타이머 시작 (60초)
+        setResendTimer(60);
       }
     } catch (error: any) {
       console.error('비밀번호 재설정 요청 실패:', error);
       
-      if (error?.response?.status === 404) {
-        toast.error('비밀번호 재설정 기능이 현재 준비 중입니다. 관리자에게 문의해주세요.');
-      } else if (error?.response?.data?.message) {
-        toast.error(error.response.data.message);
+      if (error?.response?.data?.error) {
+        toast.error(error.response.data.error);
       } else {
-        toast.error('비밀번호 재설정 기능이 현재 준비 중입니다. 관리자에게 문의해주세요.');
+        toast.error('이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 토큰 확인 및 비밀번호 재설정
-  const handlePasswordReset = async (e: React.FormEvent) => {
+  // 인증 코드 확인
+  const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 유효성 검사
-    if (!token) {
+    if (!verificationCode) {
       toast.error('인증 코드를 입력해주세요.');
       return;
     }
+
+    setIsLoading(true);
+
+    try {
+      const response = await api.verifyResetCode({
+        email,
+        code: verificationCode
+      });
+
+      if (response.uid && response.token) {
+        setUid(response.uid);
+        setToken(response.token);
+        setStep('reset');
+        toast.success(response.message || '인증이 완료되었습니다.');
+      }
+    } catch (error: any) {
+      console.error('인증 코드 확인 실패:', error);
+      
+      if (error?.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error('인증 코드 확인에 실패했습니다.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 비밀번호 재설정
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
 
     if (!newPassword || !confirmPassword) {
       toast.error('새 비밀번호를 입력해주세요.');
@@ -80,26 +111,23 @@ function ForgotPassword() {
 
     try {
       const response = await api.resetPasswordConfirm({
-        email,
+        uid,
         token,
-        new_password: newPassword
+        new_password: newPassword,
+        confirm_password: confirmPassword
       });
 
-      if (response.status || response.success) {
-        toast.success('비밀번호가 성공적으로 변경되었습니다.');
+      if (response.message) {
+        toast.success(response.message);
         setTimeout(() => {
           navigate('/login');
         }, 2000);
-      } else {
-        toast.error(response.message || '비밀번호 변경에 실패했습니다.');
       }
     } catch (error: any) {
       console.error('비밀번호 재설정 실패:', error);
       
-      if (error?.response?.status === 400) {
-        toast.error('잘못된 인증 코드입니다.');
-      } else if (error?.response?.data?.message) {
-        toast.error(error.response.data.message);
+      if (error?.response?.data?.error) {
+        toast.error(error.response.data.error);
       } else {
         toast.error('비밀번호 변경에 실패했습니다.');
       }
@@ -108,6 +136,43 @@ function ForgotPassword() {
     }
   };
 
+  // 인증 코드 재발송
+  const handleResendCode = async () => {
+    if (resendTimer > 0) {
+      toast.error(`${resendTimer}초 후에 다시 시도해주세요.`);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await api.resendVerificationCode({ email });
+      
+      if (response.message) {
+        toast.success(response.message);
+        setResendTimer(60);
+      }
+    } catch (error: any) {
+      if (error?.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error('인증 코드 재발송에 실패했습니다.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 타이머 처리
+  React.useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => {
+        setResendTimer(resendTimer - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-pink-50 flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full">
@@ -115,7 +180,7 @@ function ForgotPassword() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-400 to-pink-400 rounded-full mb-4">
             {step === 'email' && <EnvelopeIcon className="w-8 h-8 text-white" />}
-            {step === 'token' && <KeyIcon className="w-8 h-8 text-white" />}
+            {step === 'verify' && <KeyIcon className="w-8 h-8 text-white" />}
             {step === 'reset' && <LockClosedIcon className="w-8 h-8 text-white" />}
           </div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-2">
@@ -123,7 +188,7 @@ function ForgotPassword() {
           </h2>
           <p className="text-gray-600">
             {step === 'email' && '가입하신 이메일로 인증 코드를 보내드립니다.'}
-            {step === 'token' && '이메일로 받은 인증 코드를 입력해주세요.'}
+            {step === 'verify' && '이메일로 받은 인증 코드를 입력해주세요.'}
             {step === 'reset' && '새로운 비밀번호를 설정해주세요.'}
           </p>
         </div>
@@ -139,7 +204,7 @@ function ForgotPassword() {
             step !== 'email' ? 'bg-orange-500' : 'bg-gray-300'
           }`} />
           <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-            step === 'token' ? 'bg-orange-500 text-white' : step === 'reset' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'
+            step === 'verify' ? 'bg-orange-500 text-white' : step === 'reset' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-500'
           }`}>
             2
           </div>
@@ -192,9 +257,9 @@ function ForgotPassword() {
             </form>
           )}
 
-          {/* Step 2: 토큰 입력 및 새 비밀번호 설정 */}
-          {(step === 'token' || step === 'reset') && (
-            <form onSubmit={handlePasswordReset} className="space-y-6">
+          {/* Step 2: 인증 코드 확인 */}
+          {step === 'verify' && (
+            <form onSubmit={handleVerifyCode} className="space-y-6">
               {/* 이메일 표시 */}
               <div className="bg-gray-50 rounded-lg p-3 mb-4">
                 <p className="text-sm text-gray-600">
@@ -202,28 +267,69 @@ function ForgotPassword() {
                 </p>
               </div>
 
-              {/* 토큰 입력 */}
+              {/* 인증 코드 입력 */}
               <div>
-                <label htmlFor="token" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="verificationCode" className="block text-sm font-medium text-gray-700 mb-2">
                   인증 코드
                 </label>
                 <input
-                  id="token"
-                  name="token"
+                  id="verificationCode"
+                  name="verificationCode"
                   type="text"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition-all duration-200"
-                  placeholder="6자리 인증 코드"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition-all duration-200 text-center text-2xl font-mono tracking-widest"
+                  placeholder="000000"
+                  value={verificationCode}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    if (value.length <= 6) {
+                      setVerificationCode(value);
+                    }
+                  }}
                   disabled={isLoading}
                   maxLength={6}
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  이메일로 받은 6자리 코드를 입력해주세요.
+                  이메일로 받은 6자리 인증 코드를 입력해주세요.
                 </p>
               </div>
 
+              <button
+                type="submit"
+                disabled={isLoading || verificationCode.length !== 6}
+                className="w-full bg-gradient-to-r from-orange-400 to-pink-400 text-white font-semibold py-3 rounded-lg hover:from-orange-500 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-orange-400/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    확인 중...
+                  </div>
+                ) : (
+                  '인증 코드 확인'
+                )}
+              </button>
+
+              {/* 인증 코드 재발송 */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={isLoading || resendTimer > 0}
+                  className="text-sm text-gray-600 hover:text-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {resendTimer > 0 ? (
+                    `재발송 가능 (${resendTimer}초)`
+                  ) : (
+                    '인증 코드를 받지 못하셨나요? 다시 받기'
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Step 3: 새 비밀번호 설정 */}
+          {step === 'reset' && (
+            <form onSubmit={handlePasswordReset} className="space-y-6">
               {/* 새 비밀번호 */}
               <div>
                 <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
@@ -292,7 +398,7 @@ function ForgotPassword() {
 
               <button
                 type="submit"
-                disabled={isLoading || !token || !newPassword || !confirmPassword || newPassword !== confirmPassword}
+                disabled={isLoading || !newPassword || !confirmPassword || newPassword !== confirmPassword}
                 className="w-full bg-gradient-to-r from-orange-400 to-pink-400 text-white font-semibold py-3 rounded-lg hover:from-orange-500 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-orange-400/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
@@ -304,22 +410,6 @@ function ForgotPassword() {
                   '비밀번호 변경'
                 )}
               </button>
-
-              {/* 인증 코드 재발송 */}
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep('email');
-                    setToken('');
-                    setNewPassword('');
-                    setConfirmPassword('');
-                  }}
-                  className="text-sm text-gray-600 hover:text-orange-600 transition-colors"
-                >
-                  인증 코드를 받지 못하셨나요? 다시 받기
-                </button>
-              </div>
             </form>
           )}
 

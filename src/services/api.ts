@@ -177,13 +177,21 @@ export const api = {
   changePassword: (data: { current_password: string; new_password: string }) =>
     axiosInstance.post(`/mypage/change-password/`, data).then((res) => res.data),
 
-  // 비밀번호 재설정 요청 (토큰 발송)
+  // 비밀번호 재설정 요청 (인증 코드 발송)
   resetPassword: (data: { email: string }) =>
-    axiosInstance.post(`/account/password-reset/`, data).then((res) => res.data),
+    axios.post(`http://shoppuda.kro.kr:8001/accounts/api/password-reset/`, data).then((res) => res.data),
   
-  // 비밀번호 재설정 확인 (토큰 검증 및 비밀번호 변경)
-  resetPasswordConfirm: (data: { email: string; token: string; new_password: string }) =>
-    axiosInstance.post(`/account/password-reset-confirm/`, data).then((res) => res.data),
+  // 인증 코드 확인
+  verifyResetCode: (data: { email: string; code: string }) =>
+    axios.post(`http://shoppuda.kro.kr:8001/accounts/api/password-reset/verify/`, data).then((res) => res.data),
+  
+  // 비밀번호 재설정 확인 (새 비밀번호 설정)
+  resetPasswordConfirm: (data: { uid: string; token: string; new_password: string; confirm_password: string }) =>
+    axios.post(`http://shoppuda.kro.kr:8001/accounts/api/password-reset/confirm/`, data).then((res) => res.data),
+  
+  // 인증 코드 재발송
+  resendVerificationCode: (data: { email: string }) =>
+    axios.post(`http://shoppuda.kro.kr:8001/accounts/api/password-reset/resend/`, data).then((res) => res.data),
 
   // Django 모델 그대로 가져오기
   getSettings: () => axiosInstance.get(`/core/get-settings`).then((res) => {
