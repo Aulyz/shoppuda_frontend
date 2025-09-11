@@ -45,6 +45,7 @@ function ForgotPassword() {
         toast.error(error.response.data.message);
       } else {
         toast.error('비밀번호 재설정 기능이 현재 준비 중입니다. 관리자에게 문의해주세요.');
+      }
     } finally {
       setIsLoading(false);
     }
