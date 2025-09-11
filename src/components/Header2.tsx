@@ -20,10 +20,16 @@ const Header2 = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
 
   const [showGif, setShowGif] = useState(true);
+  const [logoLoaded, setLogoLoaded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartCount] = useState(0);
 
   useEffect(() => {
+    // 이미지 사전 로드
+    const img = new Image();
+    img.src = "/Images/Shoppuda_logo.png";
+    img.onload = () => setLogoLoaded(true);
+
     const timer = setTimeout(() => setShowGif(false), 1000);
     return () => clearTimeout(timer);
   }, []);
@@ -117,11 +123,29 @@ const Header2 = () => {
           {/* Logo - 로고 클릭시 메인페이지로 이동 (새로고침 제거) */}
           <div className="flex-1 md:flex-none flex justify-center md:justify-start">
             <Link to="/" className="flex flex-col items-center">
-              <img 
-                src={showGif ? "/Images/Logo_Shoppuda.gif" : "/Images/Shoppuda_logo.png"}
-                alt="SHOPPUDA Logo" 
-                className="w-32 sm:w-36 md:w-44 lg:w-48 h-auto"
-              />
+              <div className="relative w-32 sm:w-36 md:w-44 lg:w-48 h-12 sm:h-14 md:h-16 lg:h-[72px]">
+                {/* GIF 로고 */}
+                <img 
+                  src="/Images/Logo_Shoppuda.gif"
+                  alt="SHOPPUDA Logo" 
+                  className={`absolute inset-0 w-full h-full object-contain transition-all duration-500 ${
+                    showGif ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                  }`}
+                  style={{ display: showGif ? 'block' : 'none' }}
+                />
+                {/* 정적 이미지 로고 */}
+                <img 
+                  src="/Images/Shoppuda_logo.png"
+                  alt="SHOPPUDA Logo" 
+                  className={`absolute inset-0 w-full h-full object-contain transition-all duration-700 ${
+                    !showGif && logoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
+                  }`}
+                  style={{ 
+                    display: !showGif ? 'block' : 'none',
+                    animation: !showGif && logoLoaded ? 'fadeInScale 0.7s ease-out' : 'none'
+                  }}
+                />
+              </div>
               <span className="text-base font-medium text-gray-700 mt-2 tracking-wide">해외 쇼핑, 클릭 한 번으로</span>
             </Link>
           </div>
