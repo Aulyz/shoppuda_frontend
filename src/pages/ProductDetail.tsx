@@ -531,7 +531,7 @@ function ProductDetail() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">배송비:</span>
-                  <span className="text-green-600 font-medium">제고상품, 제고 있음</span>
+                  <span className="text-green-600 font-medium">재고상품, 재고 있음</span>
                 </div>
               </div>
             </div>
