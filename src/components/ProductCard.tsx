@@ -9,12 +9,27 @@ import OptimizedImage from './OptimizedImage';
 
 interface ProductCardProps {
   product: {
-    id: number;
+    id: string | number;
     name: string;
     image?: string;
-    price: string;
-    discount_price?: string;
+    thumbnail?: string;
+    price: string | number;
+    discount_price?: string | number;
+    discount_percentage?: number;
     slug?: string;
+    stock?: number;
+    stock_quantity?: number;
+    is_new?: boolean;
+    is_best?: boolean;
+    is_featured?: boolean;
+    brand?: string | null;
+    brand_name?: string;
+    short_description?: string;
+    category?: {
+      id: number;
+      name: string;
+      code: string;
+    } | string;
   };
 }
 
@@ -93,9 +108,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   };
 
   const calculateDiscount = () => {
+    if (product.discount_percentage) {
+      return product.discount_percentage;
+    }
     if (product.discount_price) {
-      const original = parseFloat(product.price);
-      const discounted = parseFloat(product.discount_price);
+      const original = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
+      const discounted = typeof product.discount_price === 'string' ? parseFloat(product.discount_price) : product.discount_price;
       return Math.round(((original - discounted) / original) * 100);
     }
     return 0;
@@ -109,7 +127,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       {/* 상품 이미지 */}
       <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-2xl bg-gray-100 relative">
         <OptimizedImage
-          src={product.image || ''}
+          src={product.image || product.thumbnail || ''}
           alt={product.name}
           className="h-64 w-full group-hover:scale-110 transition-transform duration-300"
           width={256}
@@ -150,6 +168,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       
       {/* 상품 정보 */}
       <div className="p-4">
+        {/* 브랜드 명 */}
+        {(product.brand || product.brand_name) && (
+          <p className="text-xs text-gray-500 mb-1">
+            {product.brand_name || product.brand}
+          </p>
+        )}
         <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors duration-200">
           {product.name}
         </h3>
@@ -158,18 +182,42 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             {product.discount_price ? (
               <div className="flex flex-col">
                 <p className="text-lg font-bold text-orange-600">
-                  ₩{parseFloat(product.discount_price).toLocaleString()}
+                  ₩{(typeof product.discount_price === 'string' ? parseFloat(product.discount_price) : product.discount_price).toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-500 line-through">
-                  ₩{parseFloat(product.price).toLocaleString()}
+                  ₩{(typeof product.price === 'string' ? parseFloat(product.price) : product.price).toLocaleString()}
                 </p>
               </div>
             ) : (
               <p className="text-lg font-bold text-gray-900">
-                ₩{parseFloat(product.price).toLocaleString()}
+                ₩{(typeof product.price === 'string' ? parseFloat(product.price) : product.price).toLocaleString()}
               </p>
             )}
           </div>
+        </div>
+        
+        {/* 재고 상태 */}
+        {(product.stock === 0 || product.stock_quantity === 0) && (
+          <p className="text-xs text-red-500 mt-2">품절</p>
+        )}
+        {((product.stock && product.stock > 0 && product.stock <= 5) || 
+          (product.stock_quantity && product.stock_quantity > 0 && product.stock_quantity <= 5)) && (
+          <p className="text-xs text-orange-500 mt-2">
+            재고 {product.stock || product.stock_quantity}개 남음
+          </p>
+        )}
+        
+        {/* 배지 */}
+        <div className="flex gap-2 mt-2">
+          {product.is_new && (
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">NEW</span>
+          )}
+          {product.is_best && (
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">BEST</span>
+          )}
+          {product.is_featured && (
+            <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">추천</span>
+          )}
         </div>
       </div>
     </Link>

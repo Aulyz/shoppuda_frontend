@@ -94,7 +94,13 @@ export const api = {
     axiosInstance.get(`/shop/products/`, { params }).then((res) => res.data),
 
   getCategories: () =>
-    axiosInstance.get(`/shop/categories/`).then((res) => res.data),
+    axiosInstance.get(`/shop/categories/`).then((res) => {
+      // API 응답 구조 확인
+      if (res.data.status && res.data.categories) {
+        return res.data.categories;
+      }
+      return res.data;
+    }),
 
   getProduct: (id: number | string) => {
     if (typeof id === "string" && id.includes("-")) {
@@ -179,19 +185,33 @@ export const api = {
 
   // 비밀번호 재설정 요청 (인증 코드 발송)
   resetPassword: (data: { email: string }) =>
-    axios.post(`http://shoppuda.kro.kr:8001/accounts/api/password-reset/`, data).then((res) => res.data),
+    axios.post(`http://shoppuda.kro.kr:8000/accounts/api/password-reset/`, data).then((res) => res.data),
   
   // 인증 코드 확인
   verifyResetCode: (data: { email: string; code: string }) =>
-    axios.post(`http://shoppuda.kro.kr:8001/accounts/api/password-reset/verify/`, data).then((res) => res.data),
+    axios.post(`http://shoppuda.kro.kr:8000/accounts/api/password-reset/verify/`, data).then((res) => res.data),
   
   // 비밀번호 재설정 확인 (새 비밀번호 설정)
   resetPasswordConfirm: (data: { uid: string; token: string; new_password: string; confirm_password: string }) =>
-    axios.post(`http://shoppuda.kro.kr:8001/accounts/api/password-reset/confirm/`, data).then((res) => res.data),
+    axios.post(`http://shoppuda.kro.kr:8000/accounts/api/password-reset/confirm/`, data).then((res) => res.data),
   
   // 인증 코드 재발송
   resendVerificationCode: (data: { email: string }) =>
-    axios.post(`http://shoppuda.kro.kr:8001/accounts/api/password-reset/resend/`, data).then((res) => res.data),
+    axios.post(`http://shoppuda.kro.kr:8000/accounts/api/password-reset/resend/`, data).then((res) => res.data),
+
+  // Search APIs
+  searchProducts: (query: string, params?: any) =>
+    axiosInstance.get(`/shop/products/search/`, { 
+      params: { q: query, ...params } 
+    }).then((res) => res.data),
+  
+  getSearchSuggestions: (query: string) =>
+    axiosInstance.get(`/shop/products/suggestions/`, { 
+      params: { q: query } 
+    }).then((res) => res.data),
+  
+  getPopularSearches: () =>
+    axiosInstance.get(`/shop/products/popular-searches/`).then((res) => res.data),
 
   // Django 모델 그대로 가져오기
   getSettings: () => axiosInstance.get(`/core/get-settings`).then((res) => {

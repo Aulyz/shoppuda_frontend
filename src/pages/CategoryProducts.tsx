@@ -61,7 +61,8 @@ function CategoryProducts() {
     () => api.getCategories()
   )
 
-  const allCategories = categoriesData?.categories || []
+  // API 응답 구조에 따라 카테고리 데이터 처리
+  const allCategories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.categories || [])
 
   // 카테고리 경로에서 현재 카테고리 찾기
   const findCategoryByPath = (categories: Category[], path: string[]): Category | null => {
@@ -74,8 +75,7 @@ function CategoryProducts() {
       const decodedSegment = decodeURIComponent(segment)
       const category = currentLevel.find(cat => 
         cat.name === decodedSegment || 
-        cat.code === decodedSegment ||
-        cat.name.toLowerCase().replace(/\s+/g, '-') === decodedSegment.toLowerCase()
+        cat.code === decodedSegment
       )
       
       if (category) {
@@ -90,6 +90,13 @@ function CategoryProducts() {
   }
 
   const currentCategory = findCategoryByPath(allCategories, pathSegments)
+
+  // 디버깅용 로그
+  useEffect(() => {
+    console.log('Path segments:', pathSegments);
+    console.log('All categories:', allCategories);
+    console.log('Current category:', currentCategory);
+  }, [pathSegments, allCategories, currentCategory])
 
   // 현재 카테고리와 모든 하위 카테고리의 ID 수집
   const getCategoryAndDescendantIds = (category: Category): number[] => {
@@ -485,14 +492,7 @@ function CategoryProducts() {
               {filteredProducts.map((product: Product) => (
                 <ProductCard 
                   key={product.id} 
-                  product={{
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    discount_price: product.discount_price || undefined,
-                    image: product.image || product.thumbnail,
-                    slug: product.slug
-                  }} 
+                  product={product}
                 />
               ))}
             </div>

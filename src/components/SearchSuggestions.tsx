@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MagnifyingGlassIcon, ClockIcon, FireIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
+import { debounce } from '../utils/debounce';
 
 interface SearchSuggestionsProps {
   isVisible: boolean;
@@ -13,40 +15,6 @@ interface SearchSuggestionsProps {
 const RECENT_SEARCHES_KEY = 'shoppuda_recent_searches';
 const MAX_RECENT_SEARCHES = 5;
 
-// 인기 검색어 (실제로는 서버에서 가져올 수 있음)
-const POPULAR_SEARCHES = [
-  '아이폰',
-  '에어�팟',
-  '나이키 운동화',
-  '맥북',
-  '화장품',
-  '향수',
-  '가방',
-  '시계'
-];
-
-// 검색 제안 데이터 (카테고리별)
-const SEARCH_SUGGESTIONS = [
-  // 전자제품
-  '아이폰 15', '아이폰 14', '아이폰 케이스',
-  '에어팟 프로', '에어팟 맥스',
-  '맥북 에어', '맥북 프로',
-  '애플워치', '아이패드',
-  
-  // 패션
-  '나이키 에어맥스', '아디다스 운동화', '컨버스',
-  '구찌 가방', '프라다 지갑', '샤넬 향수',
-  '유니클로', '자라',
-  
-  // 뷰티
-  '디올 립스틱', '샤넬 파운데이션', '에스티로더',
-  '클리니크', 'SK-II', '랑콤',
-  
-  // 생활용품
-  '다이슨 청소기', '에어프라이어', '커피머신',
-  '블루투스 스피커', '무선충전기'
-];
-
 const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
   isVisible,
   searchQuery,
@@ -55,8 +23,10 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
 }) => {
   const navigate = useNavigate();
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [popularSearches, setPopularSearches] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isLoading, setIsLoading] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   // 최근 검색어 불러오기
@@ -71,18 +41,64 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
     }
   }, []);
 
-  // 검색어 필터링
+  // API에서 검색 제안 가져오기
+  const fetchSuggestions = useCallback(
+    debounce(async (query: string) => {
+      if (query.trim().length < 2) {
+        setSuggestions([]);
+        return;
+      }
+      
+      setIsLoading(true);
+      try {
+        const response = await api.getSearchSuggestions(query);
+        setSuggestions(response.suggestions || []);
+      } catch (error) {
+        console.error('Failed to fetch suggestions:', error);
+        setSuggestions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 300),
+    []
+  );
+
+  // 인기 검색어 가져오기
   useEffect(() => {
-    if (searchQuery.trim().length > 0) {
-      const filtered = SEARCH_SUGGESTIONS.filter(suggestion =>
-        suggestion.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 8); // 최대 8개만 표시
-      setFilteredSuggestions(filtered);
+    const fetchPopularSearches = async () => {
+      try {
+        const response = await api.getPopularSearches();
+        setPopularSearches(response.searches || []);
+      } catch (error) {
+        console.error('Failed to fetch popular searches:', error);
+        // 기본값 사용
+        setPopularSearches([
+          '아이폰',
+          '에어팟',
+          '나이키 운동화',
+          '맥북',
+          '화장품',
+          '향수',
+          '가방',
+          '시계'
+        ]);
+      }
+    };
+    
+    if (isVisible && !searchQuery.trim()) {
+      fetchPopularSearches();
+    }
+  }, [isVisible, searchQuery]);
+
+  // 검색어 변경 시 제안 가져오기
+  useEffect(() => {
+    if (searchQuery.trim().length >= 2) {
+      fetchSuggestions(searchQuery);
     } else {
-      setFilteredSuggestions([]);
+      setSuggestions([]);
     }
     setSelectedIndex(-1);
-  }, [searchQuery]);
+  }, [searchQuery, fetchSuggestions]);
 
   // 최근 검색어 저장
   const saveRecentSearch = (query: string) => {
@@ -109,14 +125,14 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
     if (query.trim()) {
       saveRecentSearch(query);
       onSearch(query);
-      navigate(`/products?search=${encodeURIComponent(query)}`);
+      navigate(`/search?q=${encodeURIComponent(query)}`);
     }
   };
 
   // 키보드 네비게이션
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    const totalItems = filteredSuggestions.length + 
-                      (searchQuery.trim() ? 0 : recentSearches.length + POPULAR_SEARCHES.length);
+    const totalItems = suggestions.length + 
+                      (searchQuery.trim() ? 0 : recentSearches.length + popularSearches.length);
 
     switch (e.key) {
       case 'ArrowDown':
@@ -145,13 +161,13 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
   // 선택된 아이템 가져오기
   const getSelectedItem = (): string | null => {
     if (searchQuery.trim()) {
-      return filteredSuggestions[selectedIndex] || null;
+      return suggestions[selectedIndex] || null;
     } else {
       const totalRecent = recentSearches.length;
       if (selectedIndex < totalRecent) {
         return recentSearches[selectedIndex];
       } else {
-        return POPULAR_SEARCHES[selectedIndex - totalRecent] || null;
+        return popularSearches[selectedIndex - totalRecent] || null;
       }
     }
   };
@@ -164,11 +180,19 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
       className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
       onKeyDown={handleKeyDown}
     >
-      {/* 검색어가 있을 때: 필터링된 제안 */}
-      {searchQuery.trim() && filteredSuggestions.length > 0 && (
+      {/* 로딩 상태 */}
+      {isLoading && (
+        <div className="p-4 text-center">
+          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          <p className="text-sm text-gray-500 mt-2">검색 중...</p>
+        </div>
+      )}
+
+      {/* 검색어가 있을 때: API 제안 */}
+      {!isLoading && searchQuery.trim() && suggestions.length > 0 && (
         <div className="p-2">
           <div className="text-xs text-gray-500 px-3 py-2 font-medium">검색 제안</div>
-          {filteredSuggestions.map((suggestion, index) => (
+          {suggestions.map((suggestion, index) => (
             <button
               key={suggestion}
               className={`w-full flex items-center px-3 py-2 text-left hover:bg-gray-50 rounded-md transition-colors ${
@@ -229,7 +253,7 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
           {/* 인기 검색어 */}
           <div className="p-2">
             <div className="text-xs text-gray-500 px-3 py-2 font-medium">인기 검색어</div>
-            {POPULAR_SEARCHES.slice(0, 6).map((search, index) => {
+            {popularSearches.slice(0, 6).map((search, index) => {
               const actualIndex = recentSearches.length + index;
               return (
                 <button
@@ -250,7 +274,7 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
       )}
 
       {/* 검색 결과가 없을 때 */}
-      {searchQuery.trim() && filteredSuggestions.length === 0 && (
+      {!isLoading && searchQuery.trim() && suggestions.length === 0 && (
         <div className="p-4 text-center text-gray-500">
           <MagnifyingGlassIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
           <p className="text-sm">'{searchQuery}'에 대한 제안이 없습니다</p>
