@@ -27,7 +27,7 @@ const Header2 = () => {
   useEffect(() => {
     // 이미지 사전 로드
     const img = new Image();
-    img.src = "/Images/Shoppuda_logo.png";
+    img.src = "/Images/logo/Shoppuda_logo.png";
     img.onload = () => setLogoLoaded(true);
 
     const timer = setTimeout(() => setShowGif(false), 1500);  // 1초 → 1.5초로 증가
@@ -126,7 +126,7 @@ const Header2 = () => {
               <div className="relative w-32 sm:w-36 md:w-44 lg:w-48 h-12 sm:h-14 md:h-16 lg:h-[72px]">
                 {/* GIF 로고 */}
                 <img 
-                  src="/Images/Logo_Shoppuda.gif"
+                  src="/Images/logo/Logo_Shoppuda.gif"
                   alt="SHOPPUDA Logo" 
                   className={`absolute inset-0 w-full h-full object-contain transition-all duration-700 ${
                     showGif ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
@@ -135,7 +135,7 @@ const Header2 = () => {
                 />
                 {/* 정적 이미지 로고 */}
                 <img 
-                  src="/Images/Shoppuda_logo.png"
+                  src="/Images/logo/Shoppuda_logo.png"
                   alt="SHOPPUDA Logo" 
                   className={`absolute inset-0 w-full h-full object-contain transition-all duration-1000 ${
                     !showGif && logoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'

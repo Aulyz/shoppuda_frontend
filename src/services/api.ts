@@ -177,6 +177,14 @@ export const api = {
   changePassword: (data: { current_password: string; new_password: string }) =>
     axiosInstance.post(`/mypage/change-password/`, data).then((res) => res.data),
 
+  // 비밀번호 재설정 요청 (토큰 발송)
+  resetPassword: (data: { email: string }) =>
+    axiosInstance.post(`/account/password-reset/`, data).then((res) => res.data),
+  
+  // 비밀번호 재설정 확인 (토큰 검증 및 비밀번호 변경)
+  resetPasswordConfirm: (data: { email: string; token: string; new_password: string }) =>
+    axiosInstance.post(`/account/password-reset-confirm/`, data).then((res) => res.data),
+
   // Django 모델 그대로 가져오기
   getSettings: () => axiosInstance.get(`/core/get-settings`).then((res) => {
     return res.data

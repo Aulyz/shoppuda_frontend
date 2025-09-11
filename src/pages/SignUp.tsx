@@ -172,16 +172,35 @@ function SignUp() {
     },
     onError: (error: any) => {
       console.error('Signup error:', error);
+      console.error('Error response:', error.response);
+      console.error('Error response data:', error.response?.data);
+      console.error('Error response status:', error.response?.status);
+      
       if (error.response?.data) {
         const errorData = error.response.data;
         const newErrors: {[key: string]: string} = {};
-        if (errorData.username) newErrors.username = errorData.username[0];
-        if (errorData.email) newErrors.email = errorData.email[0];
-        if (errorData.password) newErrors.password = errorData.password[0];
+        
+        // 다양한 에러 필드 체크
+        if (errorData.username) newErrors.username = Array.isArray(errorData.username) ? errorData.username[0] : errorData.username;
+        if (errorData.email) newErrors.email = Array.isArray(errorData.email) ? errorData.email[0] : errorData.email;
+        if (errorData.password) newErrors.password = Array.isArray(errorData.password) ? errorData.password[0] : errorData.password;
+        if (errorData.password1) newErrors.password1 = Array.isArray(errorData.password1) ? errorData.password1[0] : errorData.password1;
+        if (errorData.non_field_errors) {
+          toast.error(Array.isArray(errorData.non_field_errors) ? errorData.non_field_errors[0] : errorData.non_field_errors);
+        }
+        
         setErrors(newErrors);
-        toast.error(errorData.detail || '회원가입에 실패했습니다.');
+        
+        // 에러 메시지 우선순위 처리
+        const errorMessage = errorData.detail || 
+                           errorData.message || 
+                           errorData.error ||
+                           Object.values(newErrors).filter(Boolean).join(', ') ||
+                           '회원가입에 실패했습니다.';
+        
+        toast.error(errorMessage);
       } else {
-        toast.error('네트워크 오류가 발생했습니다.');
+        toast.error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       }
     },
   });
@@ -1004,6 +1023,7 @@ function SignUp() {
                     const signupData = {
                       username: formData.username,
                       email: formData.email,
+                      password: formData.password1,  // 백엔드가 password 필드를 원할 수 있음
                       password1: formData.password1,
                       password2: formData.password2,
                       first_name: formData.first_name,
@@ -1017,6 +1037,7 @@ function SignUp() {
                       privacy_agreed: formData.privacy_agreed,
                       marketing_agreed: formData.marketing_agreed,
                     };
+                    console.log('Signup data being sent:', signupData);
                     signupMutation.mutate(signupData);
                     setShowFinalTermsModal(false);
                   }}

@@ -11,6 +11,7 @@ import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import Login from './pages/Login'
 import SignUp from './pages/SignUp'
+import ForgotPassword from './pages/ForgotPassword'
 import MyPage from './pages/MyPage'
 import Wishlist from './pages/Wishlist'
 import QnA from './pages/QnA'
@@ -164,6 +165,7 @@ function App() {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/qna" element={<QnA />} />

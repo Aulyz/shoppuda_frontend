@@ -231,7 +231,7 @@ function ProductDetail() {
         try {
           // Product ID is UUID string
           await axios.post(
-            'http://shoppuda.kro.kr:8000/products/api/recently-viewed/add/',
+            'http://shoppuda.kro.kr:8000/api/products/recently-viewed/add/',
             { product_id: product.id },
             { withCredentials: true }
           )

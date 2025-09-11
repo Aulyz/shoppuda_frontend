@@ -205,9 +205,9 @@ function Login() {
                     로그인 상태 유지 (2주)
                   </label>
                 </div>
-                <a href="#" className="text-orange-600 hover:text-pink-600 transition-colors">
+                <Link to="/forgot-password" className="text-orange-600 hover:text-pink-600 transition-colors">
                   비밀번호 찾기
-                </a>
+                </Link>
               </div>
 
               <button
