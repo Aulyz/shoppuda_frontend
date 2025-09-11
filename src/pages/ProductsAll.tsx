@@ -240,14 +240,7 @@ function ProductsAll() {
               {filteredProducts.map((product: Product) => (
                 <ProductCard 
                   key={product.id} 
-                  product={{
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    discount_price: product.discount_price || undefined,
-                    image: product.image || product.thumbnail,
-                    slug: product.slug
-                  }} 
+                  product={product}
                 />
               ))}
             </div>

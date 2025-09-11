@@ -2,17 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { api } from '../services/api';
+import ProductCard from '../components/ProductCard';
 
 interface Product {
   id: string;
   name: string;
-  price: number;
+  price: string | number;
   description: string;
-  image: string;
-  category: string;
-  discount_price?: number;
+  image?: string;
+  category: {
+    id: number;
+    name: string;
+    code: string;
+  } | string;
+  discount_price?: string | number;
   discount_percentage?: number;
   stock: number;
+  stock_quantity?: number;
+  short_description?: string;
+  brand?: string | null;
+  brand_name?: string;
+  thumbnail?: string;
+  is_new?: boolean;
+  is_best?: boolean;
+  is_featured?: boolean;
 }
 
 interface SearchFilters {
@@ -202,55 +215,7 @@ const SearchResults: React.FC = () => {
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products.map((product) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                className="group"
-              >
-                <div className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow overflow-hidden">
-                  <div className="aspect-square bg-gray-100 overflow-hidden">
-                    <img
-                      src={product.image || '/placeholder.png'}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder.png';
-                      }}
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        {product.discount_price ? (
-                          <>
-                            <p className="text-xs text-gray-500 line-through">
-                              {product.price.toLocaleString()}원
-                            </p>
-                            <p className="text-lg font-bold text-red-600">
-                              {product.discount_price.toLocaleString()}원
-                            </p>
-                            {product.discount_percentage && (
-                              <span className="text-xs text-red-600">
-                                {product.discount_percentage}% 할인
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <p className="text-lg font-bold text-gray-900">
-                            {product.price.toLocaleString()}원
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    {product.stock === 0 && (
-                      <p className="text-xs text-red-500 mt-2">품절</p>
-                    )}
-                  </div>
-                </div>
-              </Link>
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
 

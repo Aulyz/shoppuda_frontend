@@ -19,10 +19,20 @@ const MainNavigation = () => {
   const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
   
   // 카테고리 목록 조회
-  const { data: categoriesData } = useQuery(
+  const { data: categoriesData, error: categoriesError } = useQuery(
     'categories',
     () => api.getCategories()
   );
+
+  // 디버깅용 로그
+  useEffect(() => {
+    if (categoriesData) {
+      console.log('Categories data:', categoriesData);
+    }
+    if (categoriesError) {
+      console.error('Categories error:', categoriesError);
+    }
+  }, [categoriesData, categoriesError]);
 
   // 상품 목록 조회
   const { data: productsData } = useQuery(
@@ -31,9 +41,11 @@ const MainNavigation = () => {
   );
 
   // 최상위 카테고리만 필터링
-  const topLevelCategories = categoriesData?.categories?.filter((category: Category) => 
-    category.parent === null
-  ) || [];
+  const topLevelCategories = useMemo(() => {
+    if (!categoriesData) return [];
+    const categories = Array.isArray(categoriesData) ? categoriesData : [];
+    return categories.filter((category: Category) => category.parent === null);
+  }, [categoriesData]);
 
   // 카테고리별 상품 개수 계산
   const getCategoryProductCount = (category: Category): number => {
@@ -60,13 +72,8 @@ const MainNavigation = () => {
 
   // 카테고리의 URL 경로 생성 함수
   const getCategoryUrlPath = (category: Category): string => {
-    // 카테고리 이름을 URL-safe하게 변환
-    const urlSafeName = category.name.toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w\-가-힣]/g, '')
-      .replace(/^-+|-+$/g, '');
-    
-    return `/category/${encodeURIComponent(urlSafeName)}`;
+    // 카테고리 이름을 그대로 사용 (한글 포함)
+    return `/category/${encodeURIComponent(category.name)}`;
   };
 
   const staticItems = [
