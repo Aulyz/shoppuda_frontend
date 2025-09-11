@@ -14,7 +14,7 @@ import { Navigation, Pagination, Autoplay } from "swiper/modules";
    =============================== */
 const HeroSlider = () => {
   const slides = [
-    { id: 1, image: "/Images/home_banner1.png", alt: "메인 배너 1" },
+    { id: 1, image: "/Images/banner/home_banner1.png", alt: "메인 배너 1" },
     { id: 2, image: "/Images/banner2.jpg", alt: "메인 배너 2" },
     { id: 3, image: "/Images/banner3.jpg", alt: "메인 배너 3" },
   ];
