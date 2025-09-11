@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "react-query";
 import BannerNotification from "./BannerNotification";
 import MainNavigation from "./MainNavigation";
+import SearchSuggestions from "./SearchSuggestions";
 import { useAuthStore } from "../store/authStore";
 import { api } from "../services/api";
+import OptimizedImage from "./OptimizedImage";
 import { 
   MagnifyingGlassIcon, 
   HeartIcon, 
@@ -23,6 +25,12 @@ const Header2 = () => {
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartCount] = useState(0);
+  
+  // 검색 관련 상태
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // 이미지 사전 로드
@@ -125,18 +133,18 @@ const Header2 = () => {
             <Link to="/" className="flex flex-col items-center">
               <div className="relative w-32 sm:w-36 md:w-44 lg:w-48 h-12 sm:h-14 md:h-16 lg:h-[72px]">
                 {/* GIF 로고 */}
-                <img 
+                <img
                   src="/Images/logo/Logo_Shoppuda.gif"
-                  alt="SHOPPUDA Logo" 
+                  alt="SHOPPUDA Logo"
                   className={`absolute inset-0 w-full h-full object-contain transition-all duration-700 ${
                     showGif ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                   }`}
                   style={{ display: showGif ? 'block' : 'none' }}
                 />
                 {/* 정적 이미지 로고 */}
-                <img 
+                <img
                   src="/Images/logo/Shoppuda_logo.png"
-                  alt="SHOPPUDA Logo" 
+                  alt="SHOPPUDA Logo"
                   className={`absolute inset-0 w-full h-full object-contain transition-all duration-1000 ${
                     !showGif && logoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
                   }`}
@@ -144,6 +152,7 @@ const Header2 = () => {
                     display: !showGif ? 'block' : 'none',
                     animation: !showGif && logoLoaded ? 'fadeInScale 1s ease-out' : 'none'
                   }}
+                  onLoad={() => setLogoLoaded(true)}
                 />
               </div>
               <span className="text-base font-medium text-gray-700 mt-2 tracking-wide">해외 쇼핑, 클릭 한 번으로</span>

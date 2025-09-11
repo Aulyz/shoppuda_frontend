@@ -9,6 +9,7 @@ import {
   TagIcon
 } from '@heroicons/react/24/outline'
 import ProductCard from '../components/ProductCard'
+import { ProductGridSkeleton } from '../components/Skeleton'
 
 interface Category {
   id: number
@@ -305,8 +306,41 @@ function CategoryProducts() {
 
   if (categoriesLoading || productsLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      <div className="container mx-auto px-4 py-8">
+        {/* 빵부스러기 네비게이션 스켈레톤 */}
+        <nav className="flex items-center space-x-2 text-sm mb-6">
+          <div className="h-4 w-4 bg-gray-300 rounded animate-pulse"></div>
+          <div className="h-4 w-8 bg-gray-300 rounded animate-pulse"></div>
+          <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
+        </nav>
+
+        {/* 카테고리 타이틀 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-10 w-48 bg-gray-300 rounded-lg mb-2 animate-pulse"></div>
+          <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+
+        <div className="flex gap-8">
+          {/* 왼쪽 사이드바 스켈레톤 */}
+          <aside className="w-64 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="h-6 w-24 bg-gray-300 rounded mb-4 animate-pulse"></div>
+              <div className="space-y-2">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-8 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+          </aside>
+
+          {/* 오른쪽 상품 목록 스켈레톤 */}
+          <div className="flex-1">
+            <div className="flex justify-between items-center mb-6">
+              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <ProductGridSkeleton count={12} />
+          </div>
+        </div>
       </div>
     )
   }

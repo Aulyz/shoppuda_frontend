@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { api } from '../services/api'
 import { FireIcon, GlobeAltIcon } from '@heroicons/react/24/outline' // GlobeAltIcon 추가
+import { ProductCardSkeleton } from '../components/Skeleton'
 
 function ProductsBest() {
   // URL 파라미터
@@ -81,11 +82,7 @@ function ProductsBest() {
           {isBestLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-gray-200 h-48 rounded-2xl mb-3"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </div>
+                <ProductCardSkeleton key={i} />
               ))}
             </div>
           ) : (
@@ -162,11 +159,7 @@ function ProductsBest() {
           {isGlobalLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-gray-200 h-48 rounded-2xl mb-3"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </div>
+                <ProductCardSkeleton key={i} />
               ))}
             </div>
           ) : (

@@ -5,6 +5,11 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  plugins: [
+    react(),
+    // 이미지 최적화는 빌드 시에만 활성화
+    // process.env.NODE_ENV === 'production' && viteImagemin({...})
+  ],
   resolve: {
     alias: [{find: "@/*", replacement: path.resolve(fileURLToPath(new URL('.', import.meta.url)), "src") + "/"}],
   },

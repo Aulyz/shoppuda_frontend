@@ -9,6 +9,8 @@ import { api } from '../services/api'
 import CheckoutModal from '../components/CheckoutModal'
 import { formatPrice } from '../utils/formatPrice'
 import { PLACEHOLDER_IMAGE, handleImageError } from '../utils/constants'
+import { ProductDetailSkeleton } from '../components/Skeleton'
+import OptimizedImage from '../components/OptimizedImage'
 import axios from 'axios'
 
 interface Product {
@@ -383,54 +385,7 @@ function ProductDetail() {
 
   // 로딩 상태
   if (isLoading) {
-    return (
-      <div className="bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="animate-pulse">
-            {/* 브레드크럼 스켈레톤 */}
-            <div className="flex space-x-2 mb-6">
-              <div className="h-4 bg-gray-200 rounded w-12"></div>
-              <div className="h-4 bg-gray-200 rounded w-1"></div>
-              <div className="h-4 bg-gray-200 rounded w-16"></div>
-              <div className="h-4 bg-gray-200 rounded w-1"></div>
-              <div className="h-4 bg-gray-200 rounded w-24"></div>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* 이미지 스켈레톤 */}
-              <div className="space-y-4">
-                <div className="aspect-square bg-gray-200 rounded-2xl"></div>
-                <div className="flex space-x-2">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="w-20 h-20 bg-gray-200 rounded-lg"></div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* 상품 정보 스켈레톤 */}
-              <div className="space-y-6">
-                <div>
-                  <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-6"></div>
-                </div>
-                
-                <div className="bg-white rounded-2xl p-6 shadow-lg space-y-4">
-                  <div className="h-12 bg-gray-200 rounded w-1/3"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                  </div>
-                </div>
-                
-                <div className="bg-white rounded-2xl p-6 shadow-lg">
-                  <div className="h-16 bg-gray-200 rounded"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+    return <ProductDetailSkeleton />
   }
 
   // 에러 상태 또는 상품을 찾을 수 없는 경우

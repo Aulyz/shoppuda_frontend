@@ -4,6 +4,8 @@ import { toast } from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 import { Heart, ShoppingCart, Trash2 } from 'lucide-react';
+import { ProductGridSkeleton } from '../components/Skeleton';
+import OptimizedImage from '../components/OptimizedImage';
 
 interface WishlistItem {
   id: number;
@@ -89,8 +91,20 @@ const Wishlist: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* 헤더 스켈레톤 */}
+          <div className="flex items-center mb-8">
+            <div className="w-8 h-8 bg-red-300 rounded animate-pulse mr-3"></div>
+            <div className="h-8 w-32 bg-gray-300 rounded animate-pulse"></div>
+            <div className="ml-4 px-3 py-1 bg-red-100 rounded-full">
+              <div className="h-4 w-16 bg-red-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+          
+          {/* 상품 그리드 스켈레톤 */}
+          <ProductGridSkeleton count={8} className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" />
+        </div>
       </div>
     );
   }
@@ -123,10 +137,11 @@ const Wishlist: React.FC = () => {
               <div key={item.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative aspect-square">
                   {item.product.main_image ? (
-                    <img
+                    <OptimizedImage
                       src={item.product.main_image}
                       alt={item.product.name}
-                      className="w-full h-full object-cover cursor-pointer"
+                      className="w-full h-full cursor-pointer"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                       onClick={() => navigate(`/product/${item.product.slug}`)}
                     />
                   ) : (

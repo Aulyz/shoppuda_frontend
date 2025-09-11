@@ -29,6 +29,20 @@ export default {
       aspectRatio: {
         '21/9': '21 / 9',
       },
+      animation: {
+        'shimmer': 'shimmer 2s infinite linear',
+        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        shimmer: {
+          '0%': {
+            'background-position': '-200px 0'
+          },
+          '100%': {
+            'background-position': 'calc(200px + 100%) 0'
+          }
+        }
+      },
     },
   },
   plugins: [],

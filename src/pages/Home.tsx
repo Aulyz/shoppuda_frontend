@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import RecentlyViewed from "../components/RecentlyViewed";
+import OptimizedImage from "../components/OptimizedImage";
 
 // Swiper
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -181,11 +182,11 @@ const ProductCard = ({ p }: { p: Product }) => {
             -{p.discount}%
           </span>
         )}
-        <img
+        <OptimizedImage
           src={p.image}
           alt={p.name}
-          loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
         <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -412,10 +413,11 @@ const InstagramSection = () => {
         <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3 md:gap-4">
           {images.map((img, idx) => (
             <div key={idx} className="relative aspect-square overflow-hidden rounded-lg group cursor-pointer">
-              <img
+              <OptimizedImage
                 src={img}
                 alt={`Instagram ${idx + 1}`}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                className="w-full h-full group-hover:scale-110 transition-transform duration-500"
+                sizes="(max-width: 640px) 33vw, (max-width: 768px) 33vw, 16vw"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300" />
             </div>
