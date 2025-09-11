@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { api } from '../services/api';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
@@ -24,10 +24,39 @@ const MainNavigation = () => {
     () => api.getCategories()
   );
 
+  // 상품 목록 조회
+  const { data: productsData } = useQuery(
+    'products-nav',
+    () => api.getProducts({ page_size: 1000 })
+  );
+
   // 최상위 카테고리만 필터링
   const topLevelCategories = categoriesData?.categories?.filter((category: Category) => 
     category.parent === null
   ) || [];
+
+  // 카테고리별 상품 개수 계산
+  const getCategoryProductCount = (category: Category): number => {
+    if (!productsData?.products) return 0;
+    
+    // 현재 카테고리와 하위 카테고리의 ID들 수집
+    const getCategoryAndDescendantIds = (cat: Category): number[] => {
+      const ids = [cat.id];
+      if (cat.children) {
+        cat.children.forEach(child => {
+          ids.push(...getCategoryAndDescendantIds(child));
+        });
+      }
+      return ids;
+    };
+    
+    const categoryIds = getCategoryAndDescendantIds(category);
+    
+    // 해당 카테고리에 속한 상품 개수 카운트
+    return productsData.products.filter((product: any) => 
+      categoryIds.includes(product.category.id)
+    ).length;
+  };
 
   // 카테고리의 URL 경로 생성 함수
   const getCategoryUrlPath = (category: Category): string => {
@@ -42,7 +71,7 @@ const MainNavigation = () => {
 
   const staticItems = [
     { name: '홈', href: '/', isStatic: true },
-    { name: '전체보기', href: '/products', isStatic: true, hasDropdown: true },
+    { name: '카테고리', href: '/products', isStatic: true, hasDropdown: true },
     { name: '베스트', href: '/products/best', isStatic: true },
     { name: '신상품', href: '/products/new', isStatic: true },
     { name: '이벤트', href: '/products/sale', isStatic: true }
@@ -94,11 +123,9 @@ const MainNavigation = () => {
                               <i className={`${category.icon || 'fas fa-folder'} text-xs group-hover:text-orange-500`}></i>
                               <span className="font-medium">{category.name}</span>
                             </div>
-                            {category.children && category.children.length > 0 && (
-                              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                                {category.children.length}
-                              </span>
-                            )}
+                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                              {getCategoryProductCount(category)}
+                            </span>
                           </div>
                         </Link>
                       ))}

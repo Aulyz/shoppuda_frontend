@@ -20,7 +20,7 @@ interface Category {
 }
 
 interface Product {
-  id: string
+  id: number
   name: string
   price: string
   category: {
@@ -31,6 +31,7 @@ interface Product {
   brand: string | null
   brand_name?: string
   thumbnail?: string
+  image?: string
   discount_price: string | null
   is_new?: boolean
   is_best?: boolean
@@ -38,6 +39,7 @@ interface Product {
   stock: number
   stock_quantity?: number
   short_description: string
+  slug?: string
 }
 
 function ProductsAll() {
@@ -170,50 +172,10 @@ function ProductsAll() {
       </div>
 
       <div className="flex gap-8">
-        {/* 왼쪽 사이드바 - 카테고리 네비게이션 */}
+        {/* 왼쪽 사이드바 - 필터만 */}
         <aside className="w-64 flex-shrink-0">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h3 className="font-semibold text-lg mb-4 flex items-center">
-              <TagIcon className="h-5 w-5 mr-2" />
-              카테고리
-            </h3>
-            <div className="mb-3">
-              <button
-                onClick={() => handleCategoryFilter(null)}
-                className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                  !selectedCategoryId ? 'bg-orange-100 text-orange-600 font-semibold' : 'hover:bg-gray-50'
-                }`}
-              >
-                전체 상품
-              </button>
-            </div>
-            <div className="space-y-1">
-              {allCategories.filter((cat: Category) => !cat.parent).map(category => (
-                <div
-                  key={category.id}
-                  className="relative"
-                  onMouseEnter={() => setHoveredCategory(category.id)}
-                  onMouseLeave={() => setHoveredCategory(null)}
-                >
-                  <div
-                    className={`px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer flex items-center justify-between ${
-                      selectedCategoryId === category.id ? 'bg-orange-100 text-orange-600 font-semibold' : ''
-                    }`}
-                    onClick={() => handleCategoryFilter(category.id)}
-                  >
-                    <span>{category.name}</span>
-                    {category.children && category.children.length > 0 && (
-                      <ChevronRightIcon className="h-4 w-4 text-gray-400" />
-                    )}
-                  </div>
-                  {hoveredCategory === category.id && renderSubcategoryDropdown(category)}
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* 필터 섹션 */}
-          <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <h3 className="font-semibold text-lg mb-4 flex items-center">
               <FunnelIcon className="h-5 w-5 mr-2" />
               필터
@@ -251,7 +213,17 @@ function ProductsAll() {
           {filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {filteredProducts.map((product: Product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard 
+                  key={product.id} 
+                  product={{
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    discount_price: product.discount_price || undefined,
+                    image: product.image || product.thumbnail,
+                    slug: product.slug
+                  }} 
+                />
               ))}
             </div>
           ) : (

@@ -22,7 +22,7 @@ interface Category {
 }
 
 interface Product {
-  id: string
+  id: number
   name: string
   price: string
   category: {
@@ -33,6 +33,7 @@ interface Product {
   brand: string | null
   brand_name?: string
   thumbnail?: string
+  image?: string
   discount_price: string | null
   is_new?: boolean
   is_best?: boolean
@@ -40,6 +41,7 @@ interface Product {
   stock: number
   stock_quantity?: number
   short_description: string
+  slug?: string
 }
 
 function CategoryProducts() {
@@ -101,15 +103,15 @@ function CategoryProducts() {
 
   const categoryIds = currentCategory ? getCategoryAndDescendantIds(currentCategory) : []
 
-  // 상품 조회 - 모든 상품을 가져온 후 필터링
+  // 상품 조회 - 모든 상품을 가져와서 클라이언트에서 필터링
   const { data: productsData, isLoading: productsLoading } = useQuery(
-    ['products', selectedSort, currentPage],
+    ['products', selectedSort],
     async () => {
-      // 페이지네이션 없이 모든 상품 가져오기
+      // 모든 상품을 가져옴
       const response = await api.getProducts({ 
         ordering: selectedSort === 'newest' ? '-created_at' : 
-                  selectedSort === 'price_low' ? 'selling_price' : 
-                  selectedSort === 'price_high' ? '-selling_price' : 
+                  selectedSort === 'price_low' ? 'price' : 
+                  selectedSort === 'price_high' ? '-price' : 
                   selectedSort === 'best' ? '-is_best' : '',
         page_size: 1000 // 충분히 큰 수로 설정
       })
@@ -117,41 +119,138 @@ function CategoryProducts() {
     }
   )
 
-  // 카테고리별 상품 필터링
+  // 필터링된 상품 - 클라이언트에서 카테고리별로 필터링
   const filteredProducts = useMemo(() => {
-    if (!productsData?.products || !currentCategory) return []
+    if (!productsData?.products) return []
     
+    if (!currentCategory) {
+      return []
+    }
+    
+    // 현재 카테고리와 하위 카테고리의 ID들 수집
+    const categoryIds = getCategoryAndDescendantIds(currentCategory)
+    
+    // 카테고리 ID로 상품 필터링
     return productsData.products.filter((product: Product) => 
       categoryIds.includes(product.category.id)
     )
-  }, [productsData, categoryIds, currentCategory])
+  }, [productsData, currentCategory])
 
   // 빵부스러기 네비게이션 생성
   const getBreadcrumbs = (): { name: string; path: string }[] => {
     const breadcrumbs = [{ name: '홈', path: '/' }]
-    let currentPath = '/category'
     
-    pathSegments.forEach((segment, index) => {
-      currentPath += `/${segment}`
-      const decodedSegment = decodeURIComponent(segment)
-      breadcrumbs.push({
-        name: decodedSegment,
-        path: currentPath
+    if (!currentCategory) return breadcrumbs
+    
+    // 카테고리 경로를 구축
+    const buildBreadcrumbPath = (cat: Category): { name: string; path: string }[] => {
+      const paths: { name: string; path: string }[] = []
+      
+      // 부모 카테고리가 있으면 먼저 처리
+      if (cat.parent) {
+        const parentCat = allCategories.find((c: Category) => c.id === cat.parent)
+        if (parentCat) {
+          paths.push(...buildBreadcrumbPath(parentCat))
+        }
+      }
+      
+      // 현재 카테고리의 경로 추가
+      const urlSafeName = cat.name.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-가-힣]/g, '')
+        .replace(/^-+|-+$/g, '')
+      
+      const fullPath = paths.length > 0 
+        ? `/category/${paths.map(p => p.path.split('/').pop()).join('/')}/${encodeURIComponent(urlSafeName)}`
+        : `/category/${encodeURIComponent(urlSafeName)}`
+      
+      paths.push({
+        name: cat.name,
+        path: fullPath
       })
-    })
+      
+      return paths
+    }
+    
+    breadcrumbs.push(...buildBreadcrumbPath(currentCategory))
     
     return breadcrumbs
   }
 
   // 카테고리 클릭 핸들러
   const handleCategoryClick = (category: Category) => {
-    const urlSafeName = category.name.toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w\-가-힣]/g, '')
-      .replace(/^-+|-+$/g, '')
-    navigate(`/category/${encodeURIComponent(urlSafeName)}`)
+    // 카테고리의 전체 경로를 생성
+    const buildCategoryPath = (cat: Category): string => {
+      const paths: string[] = []
+      
+      // 현재 카테고리가 최상위가 아니면 부모 경로 먼저 추가
+      if (cat.parent) {
+        const parentCat = allCategories.find((c: Category) => c.id === cat.parent)
+        if (parentCat) {
+          const parentPath = buildCategoryPath(parentCat)
+          if (parentPath) paths.push(parentPath)
+        }
+      }
+      
+      // 현재 카테고리 이름을 URL-safe하게 변환
+      const urlSafeName = cat.name.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-가-힣]/g, '')
+        .replace(/^-+|-+$/g, '')
+      
+      paths.push(encodeURIComponent(urlSafeName))
+      
+      return paths.join('/')
+    }
+    
+    const categoryPath = buildCategoryPath(category)
+    navigate(`/category/${categoryPath}`)
     setHoveredCategory(null)
   }
+
+  // 현재 카테고리가 최상위인지 확인
+  const isTopLevelCategory = currentCategory && !currentCategory.parent
+
+  // 현재 카테고리의 최상위 카테고리 찾기
+  const getRootCategory = (cat: Category | null): Category | null => {
+    if (!cat) return null
+    let rootCategory = cat
+    while (rootCategory.parent) {
+      const parent = allCategories.find((c: Category) => c.id === rootCategory.parent)
+      if (parent) {
+        rootCategory = parent
+      } else {
+        break
+      }
+    }
+    return rootCategory
+  }
+
+  const rootCategory = getRootCategory(currentCategory)
+
+  // 사이드바에 표시할 카테고리 목록 결정
+  const getSidebarCategories = (): Category[] => {
+    if (!currentCategory) {
+      // 카테고리가 선택되지 않은 경우 최상위 카테고리 표시
+      return allCategories.filter((cat: Category) => !cat.parent)
+    }
+    
+    // 현재 카테고리의 최상위 카테고리 찾기
+    let rootCategory = currentCategory
+    while (rootCategory.parent) {
+      const parent = allCategories.find((cat: Category) => cat.id === rootCategory.parent)
+      if (parent) {
+        rootCategory = parent
+      } else {
+        break
+      }
+    }
+    
+    // 최상위 카테고리의 모든 하위 카테고리 표시
+    return rootCategory.children || []
+  }
+
+  const sidebarCategories = getSidebarCategories()
 
   // 하위 카테고리 드롭다운 렌더링
   const renderSubcategoryDropdown = (category: Category, level: number = 0) => {
@@ -242,15 +341,28 @@ function CategoryProducts() {
       </div>
 
       <div className="flex gap-8">
-        {/* 왼쪽 사이드바 - 카테고리 네비게이션 */}
-        <aside className="w-64 flex-shrink-0">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h3 className="font-semibold text-lg mb-4 flex items-center">
-              <TagIcon className="h-5 w-5 mr-2" />
-              카테고리
-            </h3>
-            <div className="space-y-1">
-              {allCategories.filter((cat: Category) => !cat.parent).map(category => (
+        {/* 왼쪽 사이드바 - 카테고리 네비게이션 (전체 상품 페이지가 아닐 때만 표시) */}
+        {currentCategory && (
+          <aside className="w-64 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <h3 className="font-semibold text-lg mb-4 flex items-center">
+                <TagIcon className="h-5 w-5 mr-2" />
+                {rootCategory?.name || '카테고리'}
+              </h3>
+              <div className="space-y-1">
+                {/* 전체보기 항목 - 항상 표시 */}
+                {rootCategory && (
+                  <div
+                    className={`px-3 py-2 rounded-lg cursor-pointer flex items-center justify-between ${
+                      isTopLevelCategory ? 'bg-orange-100 text-orange-600 font-semibold' : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => handleCategoryClick(rootCategory)}
+                  >
+                    <span>{rootCategory.name} 전체보기</span>
+                  </div>
+                )}
+                {/* 하위 카테고리 목록 */}
+                {sidebarCategories.map(category => (
                 <div
                   key={category.id}
                   className="relative"
@@ -273,9 +385,13 @@ function CategoryProducts() {
               ))}
             </div>
           </div>
+          </aside>
+        )}
 
-          {/* 필터 섹션 */}
-          <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        {/* 필터 섹션 - 전체 상품 페이지일 때는 사이드바로 표시 */}
+        {!currentCategory && (
+          <aside className="w-64 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <h3 className="font-semibold text-lg mb-4 flex items-center">
               <FunnelIcon className="h-5 w-5 mr-2" />
               필터
@@ -299,7 +415,26 @@ function CategoryProducts() {
               </div>
             </div>
           </div>
-        </aside>
+          </aside>
+        )}
+        
+        {/* 카테고리가 있을 때의 필터 섹션 */}
+        {currentCategory && (
+          <div className="fixed bottom-4 right-4 z-20">
+            <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-3">
+              <select 
+                value={selectedSort}
+                onChange={(e) => setSelectedSort(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="newest">최신순</option>
+                <option value="best">인기순</option>
+                <option value="price_low">낮은 가격순</option>
+                <option value="price_high">높은 가격순</option>
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* 오른쪽 상품 목록 */}
         <div className="flex-1">
@@ -314,7 +449,17 @@ function CategoryProducts() {
           {filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {filteredProducts.map((product: Product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard 
+                  key={product.id} 
+                  product={{
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    discount_price: product.discount_price || undefined,
+                    image: product.image || product.thumbnail,
+                    slug: product.slug
+                  }} 
+                />
               ))}
             </div>
           ) : (
