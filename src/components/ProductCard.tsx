@@ -62,7 +62,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      toast.info('로그인이 필요합니다.');
+      toast('로그인이 필요합니다.', { icon: 'ℹ️' });
       navigate('/login');
       return;
     }
@@ -88,7 +88,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      toast.info('로그인이 필요합니다.');
+      toast('로그인이 필요합니다.', { icon: 'ℹ️' });
       navigate('/login');
       return;
     }
