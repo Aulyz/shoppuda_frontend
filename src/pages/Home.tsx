@@ -91,7 +91,7 @@ const HeroSlider = () => {
    Coupon Section (개선된 반응형 카드)
    =============================== */
 const CouponSection = () => {
-  const userName = "박민우";
+  const userName = "고객";
   const coupons = [1, 2, 3];
 
   return (
