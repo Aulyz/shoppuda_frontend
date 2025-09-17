@@ -33,7 +33,7 @@ const RecentlyViewed: React.FC = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        'http://shoppuda.kro.kr:8000/products/api/recently-viewed/',
+        'http://192.168.0.5:8000/products/api/recently-viewed/',
         {
           withCredentials: true, // 세션 쿠키 포함
         }
@@ -54,7 +54,7 @@ const RecentlyViewed: React.FC = () => {
   const handleRemoveItem = async (productId: string) => {
     try {
       await axios.delete(
-        `http://shoppuda.kro.kr:8000/products/api/recently-viewed/${productId}/delete/`,
+        `http://192.168.0.5:8000/products/api/recently-viewed/${productId}/delete/`,
         {
           withCredentials: true,
         }
@@ -73,7 +73,7 @@ const RecentlyViewed: React.FC = () => {
 
     try {
       await axios.delete(
-        'http://shoppuda.kro.kr:8000/products/api/recently-viewed/clear/',
+        'http://192.168.0.5:8000/products/api/recently-viewed/clear/',
         {
           withCredentials: true,
         }
@@ -180,7 +180,7 @@ const RecentlyViewed: React.FC = () => {
               </svg>
             </button>
 
-            <Link to={`/products/${item.product.id}`}>
+            <Link to={`/product/${item.product.id}`}>
               {/* 상품 이미지 */}
               <div className="aspect-square overflow-hidden rounded-t-lg">
                 {item.product.thumbnail_url ? (
@@ -261,7 +261,7 @@ export const RecentlyViewedMini: React.FC = () => {
   const fetchRecentlyViewed = async () => {
     try {
       const response = await axios.get(
-        'http://shoppuda.kro.kr:8000/products/api/recently-viewed/',
+        'http://192.168.0.5:8000/products/api/recently-viewed/',
         {
           withCredentials: true,
         }

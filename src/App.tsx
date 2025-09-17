@@ -74,14 +74,14 @@ function KakaoAuthHandler() {
 
       try {
         console.log('Sending code to backend...');
-        const response = await fetch(`http://shoppuda.kro.kr:8000/api/kakao/login/`, {
+        const response = await fetch(`http://192.168.0.5:8000/api/kakao/login/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             code: code,
-            redirect_uri: import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://shoppuda.kro.kr:3000/kakao/callback'
+            redirect_uri: import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://192.168.0.5:3000/kakao/callback'
           }),
         });
 

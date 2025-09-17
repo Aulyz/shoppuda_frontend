@@ -17,16 +17,16 @@ export default defineConfig({
     port: 3000,
     host: '0.0.0.0',
     allowedHosts: [
-      'shoppuda.kro.kr',
+      '192.168.0.5',
     ],
     proxy: {
       '/api': {
-        target: 'http://shoppuda.kro.kr:8000',
+        target: 'http://192.168.0.5:8000',
         changeOrigin: true,
         secure: false,
       },
       '/ws': {
-        target: 'ws://shoppuda.kro.kr:8000',
+        target: 'ws://192.168.0.5:8000',
         ws: true,
         changeOrigin: true,
       },
