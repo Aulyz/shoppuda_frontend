@@ -81,7 +81,7 @@ function KakaoAuthHandler() {
           },
           body: JSON.stringify({
             code: code,
-            redirect_uri: import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://192.168.0.5:3000/kakao/callback'
+            redirect_uri: import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://192.168.0.5/kakao/callback'
           }),
         });
 
