@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from 'react-query';
 import { useAuthStore } from '../store/authStore';
+import { useCouponStore } from '../store/couponStore';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
 import {
@@ -69,6 +70,7 @@ interface UserProfile {
 
 const MyPage: React.FC = () => {
   const { user, accessToken, logout } = useAuthStore();
+  const { clearCoupons } = useCouponStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'profile' | 'addresses' | 'orders' | 'points' | 'coupons' | 'password'>('profile');
@@ -259,12 +261,14 @@ const MyPage: React.FC = () => {
       // React Query 캐시 전체 초기화
       queryClient.clear();
       
+      // 쿠폰 상태 초기화
+      clearCoupons();
+      
       // zustand store 로그아웃
       logout();
       
-      // 홈페이지로 이동
-      navigate('/');
-      toast.success('로그아웃되었습니다.');
+      // 페이지 새로고침 (F5와 동일한 효과)
+      window.location.reload();
     }
   };
 

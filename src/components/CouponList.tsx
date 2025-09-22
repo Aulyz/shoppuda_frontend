@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { api } from '../services/api'
 import { useToastStore } from '../store/toastStore'
+import { useCouponStore } from '../store/couponStore'
+import { useAuthStore } from '../store/authStore'
 
 interface Coupon {
   id: number
@@ -32,54 +33,38 @@ interface UserCoupon {
 }
 
 const CouponList: React.FC = () => {
-  const [userCoupons, setUserCoupons] = useState<UserCoupon[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { addToast } = useToastStore()
+  const { isAuthenticated } = useAuthStore()
+  const { 
+    userCoupons, 
+    isLoading: loading, 
+    isInitialized, 
+    fetchUserCoupons 
+  } = useCouponStore()
 
   useEffect(() => {
-    fetchMyCoupons()
-  }, [])
+    if (isAuthenticated) {
+      if (!isInitialized) {
+        fetchUserCoupons()
+      }
+    } else {
+      setError('로그인이 필요합니다.')
+    }
+  }, [isAuthenticated, isInitialized, fetchUserCoupons])
 
-  const fetchMyCoupons = async () => {
+  // 쿠폰 데이터 새로고침 함수
+  const refreshCoupons = async () => {
     try {
-      setLoading(true)
       setError(null)
-      const response = await api.getMyCoupons()
-      
-      // 응답 데이터 안전하게 처리
-      let coupons = []
-      if (Array.isArray(response)) {
-        coupons = response
-      } else if (response && Array.isArray(response.user_coupons)) {
-        coupons = response.user_coupons
-      } else if (response && Array.isArray(response.results)) {
-        coupons = response.results
-      } else {
-        console.warn('Unexpected API response format:', response)
-        coupons = []
-      }
-      
-      setUserCoupons(coupons)
+      await fetchUserCoupons()
     } catch (err: any) {
-      // 401/403 에러 (인증 필요) 처리
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        setError('로그인이 필요합니다.')
-        addToast({
-          type: 'warning',
-          message: '로그인 후 이용해주세요.',
-        })
-      } else {
-        const errorMessage = err.response?.data?.message || '쿠폰 목록을 불러오는데 실패했습니다.'
-        setError(errorMessage)
-        addToast({
-          type: 'error',
-          message: errorMessage,
-        })
-      }
-      setUserCoupons([]) // 에러 시 빈 배열로 설정
-    } finally {
-      setLoading(false)
+      const errorMessage = '쿠폰 목록을 불러오는데 실패했습니다.'
+      setError(errorMessage)
+      addToast({
+        type: 'error',
+        message: errorMessage,
+      })
     }
   }
 
@@ -186,7 +171,7 @@ const CouponList: React.FC = () => {
           </div>
         ) : (
           <button
-            onClick={fetchMyCoupons}
+            onClick={refreshCoupons}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             다시 시도

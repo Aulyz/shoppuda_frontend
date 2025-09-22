@@ -6,6 +6,7 @@ import { api } from "../services/api";
 import { useToastStore } from "../store/toastStore";
 import { useAuthStore } from "../store/authStore";
 import { useRecentProductsStore } from "../store/recentProductsStore";
+import { useCouponStore } from "../store/couponStore";
 
 // Swiper
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -111,44 +112,16 @@ const HeroSlider = () => {
    =============================== */
 const CouponSection = () => {
   const [isLoading, setIsLoading] = useState(false)
-  const [ownedCoupons, setOwnedCoupons] = useState<string[]>([])
   const { addToast } = useToastStore()
   const { isAuthenticated, user } = useAuthStore()
+  const { ownedCouponCodes, fetchUserCoupons, claimCoupon, isInitialized } = useCouponStore()
 
-  // 사용자 보유 쿠폰 가져오기
+  // 사용자 로그인 시 쿠폰 정보 초기화
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchOwnedCoupons()
+    if (isAuthenticated && !isInitialized) {
+      fetchUserCoupons()
     }
-  }, [isAuthenticated])
-
-  const fetchOwnedCoupons = async () => {
-    try {
-      const response = await api.getMyCoupons()
-      
-      // 응답 데이터 안전하게 처리
-      let coupons = []
-      if (Array.isArray(response)) {
-        coupons = response
-      } else if (response && Array.isArray(response.user_coupons)) {
-        coupons = response.user_coupons
-      } else if (response && Array.isArray(response.results)) {
-        coupons = response.results
-      } else {
-        coupons = []
-      }
-      
-      const couponCodes = coupons
-        .filter((coupon: any) => coupon.status === 'ISSUED')
-        .map((coupon: any) => coupon.coupon?.code)
-        .filter(Boolean)
-      
-      setOwnedCoupons(couponCodes)
-    } catch (error: any) {
-      // 쿠폰 조회 실패는 조용히 처리
-      setOwnedCoupons([])
-    }
-  }
+  }, [isAuthenticated, isInitialized, fetchUserCoupons])
 
   const handleClaimCoupon = async (e: React.MouseEvent, couponCode: string, couponName: string) => {
     e.preventDefault()
@@ -167,33 +140,27 @@ const CouponSection = () => {
     setIsLoading(true)
     
     try {
-      const response = await api.claimCoupon(couponCode)
+      const result = await claimCoupon(couponCode)
       
-      addToast({
-        type: 'success',
-        title: '쿠폰 발급 완료!',
-        message: `${couponName}이 발급되었습니다. 마이페이지에서 확인하세요.`,
-        duration: 5000,
-      })
-      
-      // 보유 쿠폰 목록 업데이트
-      setOwnedCoupons(prev => [...prev, couponCode])
-      
-      // 최신 쿠폰 목록 다시 조회
-      setTimeout(() => {
-        fetchOwnedCoupons()
-      }, 1000)
-      
+      if (result.success) {
+        addToast({
+          type: 'success',
+          title: '쿠폰 발급 완료!',
+          message: `${couponName}이 발급되었습니다. 마이페이지에서 확인하세요.`,
+          duration: 5000,
+        })
+      } else {
+        addToast({
+          type: 'error',
+          title: '쿠폰 발급 실패',
+          message: result.message || '쿠폰 발급에 실패했습니다.',
+        })
+      }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          error.message ||
-                          '쿠폰 발급에 실패했습니다.'
-      
       addToast({
         type: 'error',
         title: '쿠폰 발급 실패',
-        message: errorMessage,
+        message: '쿠폰 발급 중 오류가 발생했습니다.',
       })
     } finally {
       setIsLoading(false)
@@ -249,7 +216,7 @@ const CouponSection = () => {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
           {coupons.map((coupon) => {
-            const isOwned = ownedCoupons.includes(coupon.code)
+            const isOwned = ownedCouponCodes.includes(coupon.code)
             
             return (
               <div

@@ -5,6 +5,7 @@ import BannerNotification from "./BannerNotification";
 import MainNavigation from "./MainNavigation";
 import SearchSuggestions from "./SearchSuggestions";
 import { useAuthStore } from "../store/authStore";
+import { useCouponStore } from "../store/couponStore";
 import { api } from "../services/api";
 import OptimizedImage from "./OptimizedImage";
 import { 
@@ -20,6 +21,7 @@ const Header2 = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { clearCoupons } = useCouponStore();
 
   const [showGif, setShowGif] = useState(true);
   const [logoLoaded, setLogoLoaded] = useState(false);
@@ -108,14 +110,15 @@ const Header2 = () => {
     } finally {
       // React Query 캐시 전체 초기화
       queryClient.clear();
-      // 또는 특정 쿼리만 초기화하려면:
-      // queryClient.removeQueries();
+      
+      // 쿠폰 상태 초기화
+      clearCoupons();
       
       // zustand store 로그아웃
       logout();
       
-      // 홈페이지로 이동
-      navigate("/");
+      // 페이지 새로고침 (F5와 동일한 효과)
+      window.location.reload();
     }
   };
 
