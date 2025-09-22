@@ -24,6 +24,17 @@ const HeroSlider = () => {
     { id: 3, image: "/Images/banner3.jpg", alt: "메인 배너 3" },
   ];
 
+  // 쿠폰 섹션으로 부드럽게 스크롤하는 함수
+  const scrollToCouponSection = () => {
+    const couponSection = document.getElementById('coupon-section');
+    if (couponSection) {
+      couponSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
+  };
+
   return (
     <section className="w-full bg-gradient-to-br from-orange-50 via-white to-pink-50">
       <div className="w-full">
@@ -37,7 +48,7 @@ const HeroSlider = () => {
             pagination={{ clickable: true, dynamicBullets: true }}
             className="w-full"
           >
-            {slides.map((s) => (
+            {slides.map((s, index) => (
               <SwiperSlide key={s.id}>
                 <div className="w-full">
                   {/* 개선된 반응형 높이 */}
@@ -46,8 +57,12 @@ const HeroSlider = () => {
                       src={s.image}
                       alt={s.alt}
                       loading="eager"
-                      className="w-full h-full object-cover select-none"
+                      className={`w-full h-full object-cover select-none ${
+                        index === 0 ? 'cursor-pointer' : ''
+                      }`}
                       draggable={false}
+                      onClick={index === 0 ? scrollToCouponSection : undefined}
+                      title={index === 0 ? '쿠폰 받으러 가기' : ''}
                     />
                   </div>
                 </div>
@@ -227,7 +242,7 @@ const CouponSection = () => {
   ];
 
   return (
-    <section className="w-full py-8 sm:py-10 md:py-12 lg:py-14">
+    <section id="coupon-section" className="w-full py-8 sm:py-10 md:py-12 lg:py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-700 text-center mb-6 sm:mb-8">
           {getDisplayName()} 님을 위한 혜택
