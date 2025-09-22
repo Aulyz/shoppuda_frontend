@@ -25,7 +25,7 @@ import { useAuthStore } from './store/authStore'
 import LoginSuccess from './pages/LoginSuccess'
 import KakaoNameInput from './pages/KakaoNameInput'
 import UserDebug from './components/UserDebug'
-import RecentlyViewed from './components/RecentlyViewed'
+import { RecentlyViewedFull } from './components/RecentlyViewed'
 import ToastContainer from './components/ToastContainer'
 
 const queryClient = new QueryClient({
@@ -158,6 +158,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/home" element={<Home />} />
             <Route path="/products" element={<ProductsAll />} />
+            <Route path="/shop" element={<ProductsAll />} />
             <Route path="/products/best" element={<ProductsBest />} />
             <Route path="/products/new" element={<ProductsNew />} />
             <Route path="/products/sale" element={<ProductsSale />} />
@@ -174,7 +175,7 @@ function App() {
             <Route path="/qna" element={<QnA />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/support" element={<Support />} />
-            <Route path="/recently-viewed" element={<RecentlyViewed />} />
+            <Route path="/recently-viewed" element={<RecentlyViewedFull />} />
             <Route path="/kakao/callback" element={<KakaoAuthHandler />} />
             <Route path="/login/success" element={<LoginSuccess />} />
             <Route path="/kakao/name-input" element={<KakaoNameInput />} />

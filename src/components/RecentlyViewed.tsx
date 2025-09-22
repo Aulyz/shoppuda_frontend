@@ -1,98 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import OptimizedImage from './OptimizedImage';
-
-interface Product {
-  id: string;  // UUID로 변경
-  name: string;
-  slug?: string;
-  selling_price: number;  // price -> selling_price로 변경
-  discount_price?: number;
-  thumbnail_url?: string;
-  category_name: string;
-}
-
-interface RecentlyViewedItem {
-  id: number;
-  product: Product;
-  viewed_at: string;
-  view_count: number;
-}
+import { useRecentProductsStore } from '../store/recentProductsStore';
 
 const RecentlyViewed: React.FC = () => {
-  const [items, setItems] = useState<RecentlyViewedItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { getRecentProducts, clearAllProducts } = useRecentProductsStore();
+  const recentProducts = getRecentProducts();
 
-  useEffect(() => {
-    fetchRecentlyViewed();
-  }, []);
-
-  const fetchRecentlyViewed = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        'http://192.168.0.5:8000/products/api/recently-viewed/',
-        {
-          withCredentials: true, // 세션 쿠키 포함
-        }
-      );
-      // response.data가 배열인지 확인
-      const data = Array.isArray(response.data) ? response.data : [];
-      setItems(data);
-      setError(null);
-    } catch (err) {
-      console.error('Failed to fetch recently viewed:', err);
-      setError('최근 본 상품을 불러오는데 실패했습니다.');
-      setItems([]); // 에러 시 빈 배열로 설정
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveItem = async (productId: string) => {
-    try {
-      await axios.delete(
-        `http://192.168.0.5:8000/products/api/recently-viewed/${productId}/delete/`,
-        {
-          withCredentials: true,
-        }
-      );
-      // 목록에서 제거
-      setItems(items.filter(item => item.product.id !== productId));
-    } catch (err) {
-      console.error('Failed to remove item:', err);
-    }
-  };
-
-  const handleClearAll = async () => {
-    if (!window.confirm('모든 최근 본 상품을 삭제하시겠습니까?')) {
-      return;
-    }
-
-    try {
-      await axios.delete(
-        'http://192.168.0.5:8000/products/api/recently-viewed/clear/',
-        {
-          withCredentials: true,
-        }
-      );
-      setItems([]);
-    } catch (err) {
-      console.error('Failed to clear all:', err);
+  const handleClearAll = () => {
+    if (window.confirm('모든 최근 본 상품을 삭제하시겠습니까?')) {
+      clearAllProducts();
     }
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('ko-KR', {
-      style: 'currency',
-      currency: 'KRW',
-    }).format(price);
+    return new Intl.NumberFormat('ko-KR').format(price);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -109,34 +35,166 @@ const RecentlyViewed: React.FC = () => {
     return date.toLocaleDateString('ko-KR');
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-      </div>
-    );
+  const getImageUrl = (product: any) => {
+    if (product.main_image) return product.main_image;
+    if (product.images && product.images.length > 0) return product.images[0].url;
+    if (product.image) return product.image;
+    return '/placeholder-image.jpg';
+  };
+
+  const getDisplayPrice = (product: any) => {
+    if (product.sale_price && product.sale_price > 0) return product.sale_price;
+    if (product.regular_price) return product.regular_price;
+    return product.price || 0;
+  };
+
+  if (recentProducts.length === 0) {
+    return null; // 홈페이지에서는 아무것도 표시하지 않음
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-8 text-red-500">
-        {error}
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-gray-500 mb-4">
-          최근 본 상품이 없습니다.
+  return (
+    <section className="py-8 sm:py-10 md:py-12 lg:py-14">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-800">
+            최근 본 상품
+          </h2>
+          <button
+            onClick={handleClearAll}
+            className="text-sm text-gray-500 hover:text-red-500 transition-colors"
+          >
+            전체 삭제
+          </button>
         </div>
-        <Link 
-          to="/shop" 
-          className="inline-block px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-        >
-          쇼핑 계속하기
-        </Link>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+          {recentProducts.slice(0, 5).map((product) => (
+            <div
+              key={product.id}
+              className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group"
+            >
+              <Link to={`/product/${product.id}`}>
+                <div className="relative w-full aspect-square bg-gray-50">
+                  <OptimizedImage
+                    src={getImageUrl(product)}
+                    alt={product.name}
+                    className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="flex justify-center gap-2">
+                      <button className="bg-white/90 backdrop-blur px-3 py-1 rounded text-xs font-semibold hover:bg-white transition-colors">
+                        WISH
+                      </button>
+                      <button className="bg-white/90 backdrop-blur px-3 py-1 rounded text-xs font-semibold hover:bg-white transition-colors">
+                        ADD
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="px-3 sm:px-4 py-3 sm:py-4">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem]">
+                    {product.name}
+                  </h3>
+                  <div className="mt-2 text-base sm:text-lg font-bold text-gray-900">
+                    {formatPrice(getDisplayPrice(product))}원
+                  </div>
+                  <div className="mt-1 text-xs text-gray-400">
+                    {formatDate(product.viewedAt)}
+                  </div>
+                </div>
+              </Link>
+            </div>
+          ))}
+        </div>
+
+        {recentProducts.length > 5 && (
+          <div className="text-center mt-8">
+            <Link
+              to="/recently-viewed"
+              className="inline-flex items-center px-6 py-3 bg-gray-800 text-white rounded-full font-semibold hover:bg-gray-900 transition-colors duration-200"
+            >
+              더 많은 상품 보기
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
+export default RecentlyViewed;
+
+// 전체 최근 본 상품 페이지용 컴포넌트
+export const RecentlyViewedFull: React.FC = () => {
+  const { getRecentProducts, clearAllProducts } = useRecentProductsStore();
+  const recentProducts = getRecentProducts();
+
+  const handleRemoveItem = (productId: string | number) => {
+    const { recentProducts: current } = useRecentProductsStore.getState();
+    const filtered = current.filter(p => p.id !== productId);
+    useRecentProductsStore.setState({ recentProducts: filtered });
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm('모든 최근 본 상품을 삭제하시겠습니까?')) {
+      clearAllProducts();
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('ko-KR').format(price);
+  };
+
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return '방금 전';
+    if (diffMins < 60) return `${diffMins}분 전`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}시간 전`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays}일 전`;
+    
+    return date.toLocaleDateString('ko-KR');
+  };
+
+  const getImageUrl = (product: any) => {
+    if (product.main_image) return product.main_image;
+    if (product.images && product.images.length > 0) return product.images[0].url;
+    if (product.image) return product.image;
+    return '/placeholder-image.jpg';
+  };
+
+  const getDisplayPrice = (product: any) => {
+    if (product.sale_price && product.sale_price > 0) return product.sale_price;
+    if (product.regular_price) return product.regular_price;
+    return product.price || 0;
+  };
+
+  if (recentProducts.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <div className="text-gray-500 mb-4">
+            최근 본 상품이 없습니다.
+          </div>
+          <Link 
+            to="/shop" 
+            className="inline-block px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+          >
+            쇼핑 계속하기
+          </Link>
+        </div>
       </div>
     );
   }
@@ -154,14 +212,14 @@ const RecentlyViewed: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {items.map((item) => (
+        {recentProducts.map((product) => (
           <div
-            key={item.id}
+            key={product.id}
             className="relative group bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow"
           >
             {/* 삭제 버튼 */}
             <button
-              onClick={() => handleRemoveItem(item.product.id)}
+              onClick={() => handleRemoveItem(product.id)}
               className="absolute top-2 right-2 z-10 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
               title="삭제"
             >
@@ -180,63 +238,27 @@ const RecentlyViewed: React.FC = () => {
               </svg>
             </button>
 
-            <Link to={`/product/${item.product.id}`}>
+            <Link to={`/product/${product.id}`}>
               {/* 상품 이미지 */}
               <div className="aspect-square overflow-hidden rounded-t-lg">
-                {item.product.thumbnail_url ? (
-                  <img
-                    src={item.product.thumbnail_url}
-                    alt={item.product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <svg
-                      className="w-12 h-12 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                )}
+                <OptimizedImage
+                  src={getImageUrl(product)}
+                  alt={product.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                />
               </div>
 
               {/* 상품 정보 */}
               <div className="p-3">
-                <div className="text-xs text-gray-500 mb-1">
-                  {item.product.category_name}
-                </div>
                 <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">
-                  {item.product.name}
+                  {product.name}
                 </h3>
-                <div className="flex items-center justify-between">
-                  <div>
-                    {item.product.discount_price ? (
-                      <>
-                        <div className="text-xs text-gray-400 line-through">
-                          {formatPrice(item.product.selling_price)}
-                        </div>
-                        <div className="text-sm font-bold text-orange-500">
-                          {formatPrice(item.product.discount_price)}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-sm font-bold text-gray-900">
-                        {formatPrice(item.product.selling_price)}
-                      </div>
-                    )}
-                  </div>
+                <div className="text-sm font-bold text-gray-900 mb-2">
+                  {formatPrice(getDisplayPrice(product))}원
                 </div>
-                <div className="mt-2 text-xs text-gray-400">
-                  {formatDate(item.viewed_at)}
-                  {item.view_count > 1 && ` · ${item.view_count}회 조회`}
+                <div className="text-xs text-gray-400">
+                  {formatDate(product.viewedAt)}
                 </div>
               </div>
             </Link>
@@ -247,37 +269,29 @@ const RecentlyViewed: React.FC = () => {
   );
 };
 
-export default RecentlyViewed;
-
 // 사이드바용 미니 컴포넌트
 export const RecentlyViewedMini: React.FC = () => {
-  const [items, setItems] = useState<RecentlyViewedItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { getRecentProducts } = useRecentProductsStore();
+  const recentProducts = getRecentProducts();
 
-  useEffect(() => {
-    fetchRecentlyViewed();
-  }, []);
-
-  const fetchRecentlyViewed = async () => {
-    try {
-      const response = await axios.get(
-        'http://192.168.0.5:8000/products/api/recently-viewed/',
-        {
-          withCredentials: true,
-        }
-      );
-      // response.data가 배열인지 확인
-      const data = Array.isArray(response.data) ? response.data : [];
-      setItems(data.slice(0, 10)); // 최대 10개만 표시
-    } catch (err) {
-      console.error('Failed to fetch recently viewed:', err);
-      setItems([]); // 에러 시 빈 배열로 설정
-    } finally {
-      setLoading(false);
-    }
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('ko-KR').format(price);
   };
 
-  if (loading || items.length === 0) {
+  const getImageUrl = (product: any) => {
+    if (product.main_image) return product.main_image;
+    if (product.images && product.images.length > 0) return product.images[0].url;
+    if (product.image) return product.image;
+    return '/placeholder-image.jpg';
+  };
+
+  const getDisplayPrice = (product: any) => {
+    if (product.sale_price && product.sale_price > 0) return product.sale_price;
+    if (product.regular_price) return product.regular_price;
+    return product.price || 0;
+  };
+
+  if (recentProducts.length === 0) {
     return null;
   }
 
@@ -293,31 +307,26 @@ export const RecentlyViewedMini: React.FC = () => {
         </Link>
       </div>
       <div className="space-y-2">
-        {items.map((item) => (
+        {recentProducts.slice(0, 5).map((product) => (
           <Link
-            key={item.id}
-            to={`/product/${item.product.id}`}
+            key={product.id}
+            to={`/product/${product.id}`}
             className="flex items-center space-x-2 hover:bg-gray-50 p-1 rounded transition-colors"
           >
             <div className="w-12 h-12 flex-shrink-0">
-              {item.product.thumbnail_url ? (
-                <img
-                  src={item.product.thumbnail_url}
-                  alt={item.product.name}
-                  className="w-full h-full object-cover rounded"
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-200 rounded"></div>
-              )}
+              <OptimizedImage
+                src={getImageUrl(product)}
+                alt={product.name}
+                className="w-full h-full object-cover rounded"
+                sizes="48px"
+              />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-gray-900 truncate">
-                {item.product.name}
+                {product.name}
               </p>
               <p className="text-xs font-semibold text-orange-500">
-                {new Intl.NumberFormat('ko-KR').format(
-                  item.product.discount_price || item.product.selling_price
-                )}원
+                {formatPrice(getDisplayPrice(product))}원
               </p>
             </div>
           </Link>

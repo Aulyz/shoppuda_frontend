@@ -21,18 +21,17 @@ const MainNavigation = () => {
   // 카테고리 목록 조회
   const { data: categoriesData, error: categoriesError } = useQuery(
     'categories',
-    () => api.getCategories()
+    () => api.getCategories(),
+    {
+      retry: 1,
+      onError: () => {
+        // 카테고리 조회 실패는 조용히 처리
+      }
+    }
   );
 
-  // 디버깅용 로그
-  useEffect(() => {
-    if (categoriesData) {
-      console.log('Categories data:', categoriesData);
-    }
-    if (categoriesError) {
-      console.error('Categories error:', categoriesError);
-    }
-  }, [categoriesData, categoriesError]);
+  // 카테고리 데이터
+  const categories = categoriesData || [];
 
   // 상품 목록 조회
   const { data: productsData } = useQuery(
@@ -42,10 +41,12 @@ const MainNavigation = () => {
 
   // 최상위 카테고리만 필터링
   const topLevelCategories = useMemo(() => {
-    if (!categoriesData) return [];
-    const categories = Array.isArray(categoriesData) ? categoriesData : [];
-    return categories.filter((category: Category) => category.parent === null);
-  }, [categoriesData]);
+    if (!categories || categories.length === 0) return [];
+    const categoryArray = Array.isArray(categories) ? categories : [];
+    return categoryArray.filter((category: any) => 
+      category.parent === null || category.parent === undefined
+    );
+  }, [categories]);
 
   // 카테고리별 상품 개수 계산
   const getCategoryProductCount = (category: Category): number => {

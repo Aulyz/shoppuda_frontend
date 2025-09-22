@@ -5,13 +5,13 @@ import { HeartIcon, ShoppingCartIcon, ChevronLeftIcon, ChevronRightIcon } from '
 import { HeartIcon as HeartSolidIcon, StarIcon } from '@heroicons/react/24/solid'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '../store/authStore'
+import { useRecentProductsStore } from '../store/recentProductsStore'
 import { api } from '../services/api'
 import CheckoutModal from '../components/CheckoutModal'
 import { formatPrice } from '../utils/formatPrice'
 import { PLACEHOLDER_IMAGE, handleImageError } from '../utils/constants'
 import { ProductDetailSkeleton } from '../components/Skeleton'
 import OptimizedImage from '../components/OptimizedImage'
-import axios from 'axios'
 
 interface Product {
   id: string | number
@@ -179,6 +179,7 @@ function ProductDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isAuthenticated } = useAuthStore()
+  const { addProduct } = useRecentProductsStore()
   const [quantity, setQuantity] = useState(1)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [activeTab, setActiveTab] = useState('상품정보')
@@ -227,24 +228,22 @@ function ProductDetail() {
   }, [product])
 
   // Track recently viewed product
+  // 최근 본 상품에 추가
   useEffect(() => {
-    const trackProductView = async () => {
-      if (product && product.id) {
-        try {
-          // Product ID is UUID string
-          await axios.post(
-            'http://192.168.0.5:8000/api/products/recently-viewed/add/',
-            { product_id: product.id },
-            { withCredentials: true }
-          )
-        } catch (error) {
-          console.error('Failed to track product view:', error)
-        }
-      }
+    if (product && product.id) {
+      console.log('ProductDetail에서 상품 추가:', product.id, product.name)
+      addProduct({
+        id: product.id,
+        name: product.name,
+        image: product.main_image || (product.images?.[0]?.url) || product.image || '/placeholder-image.jpg',
+        main_image: product.main_image,
+        images: product.images,
+        price: product.price,
+        sale_price: product.sale_price,
+        regular_price: product.regular_price
+      })
     }
-
-    trackProductView()
-  }, [product])
+  }, [product, addProduct])
 
   // 장바구니 추가 mutation
   const addToCartMutation = useMutation(

@@ -5,6 +5,7 @@ import OptimizedImage from "../components/OptimizedImage";
 import { api } from "../services/api";
 import { useToastStore } from "../store/toastStore";
 import { useAuthStore } from "../store/authStore";
+import { useRecentProductsStore } from "../store/recentProductsStore";
 
 // Swiper
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -109,13 +110,26 @@ const CouponSection = () => {
   const fetchOwnedCoupons = async () => {
     try {
       const response = await api.getMyCoupons()
-      const coupons = response.user_coupons || []
+      
+      // 응답 데이터 안전하게 처리
+      let coupons = []
+      if (Array.isArray(response)) {
+        coupons = response
+      } else if (response && Array.isArray(response.user_coupons)) {
+        coupons = response.user_coupons
+      } else if (response && Array.isArray(response.results)) {
+        coupons = response.results
+      } else {
+        coupons = []
+      }
+      
       const couponCodes = coupons
         .filter((coupon: any) => coupon.status === 'ISSUED')
         .map((coupon: any) => coupon.coupon?.code)
         .filter(Boolean)
+      
       setOwnedCoupons(couponCodes)
-    } catch (error) {
+    } catch (error: any) {
       // 쿠폰 조회 실패는 조용히 처리
       setOwnedCoupons([])
     }
@@ -149,6 +163,11 @@ const CouponSection = () => {
       
       // 보유 쿠폰 목록 업데이트
       setOwnedCoupons(prev => [...prev, couponCode])
+      
+      // 최신 쿠폰 목록 다시 조회
+      setTimeout(() => {
+        fetchOwnedCoupons()
+      }, 1000)
       
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 
@@ -323,58 +342,134 @@ const CouponSection = () => {
    Product Card (개선된 공용 컴포넌트)
    =============================== */
 type Product = { 
-  id: number; 
+  id: number | string; 
   name: string; 
-  price: number; 
-  image: string;
+  price: number | string; // 백엔드에서 문자열로 반환
+  sale_price?: number | string;
+  regular_price?: number | string;
+  discount_price?: number | string | null; // 백엔드 필드
+  image?: string;
+  images?: Array<{url: string}>;
+  main_image?: string;
   isNew?: boolean;
   discount?: number;
+  category?: {
+    id: number;
+    name: string;
+    code: string;
+  };
+  brand?: {
+    id: number;
+    name: string;
+    code: string;
+  } | null;
+  stock?: number;
+  status?: string;
+  is_featured?: boolean;
+  created_at?: string;
 };
 
 const ProductCard = ({ p }: { p: Product }) => {
+  const { addProduct } = useRecentProductsStore()
+
+  // 이미지 URL 처리
+  const getImageUrl = () => {
+    if (p.main_image) return p.main_image
+    if (p.images && p.images.length > 0) return p.images[0].url
+    if (p.image) return p.image
+    return '/placeholder-image.jpg'
+  }
+
+  // 가격 처리 (백엔드 문자열 → 숫자 변환)
+  const getDisplayPrice = () => {
+    // 백엔드의 discount_price 확인 (할인가)
+    const discountPrice = typeof p.discount_price === 'string' ? parseFloat(p.discount_price) : p.discount_price
+    if (discountPrice && discountPrice > 0) {
+      return discountPrice
+    }
+    
+    // sale_price가 있고 0보다 크면 sale_price 사용
+    const salePrice = typeof p.sale_price === 'string' ? parseFloat(p.sale_price) : p.sale_price
+    if (salePrice && salePrice > 0) {
+      return salePrice
+    }
+    
+    // regular_price가 있으면 사용
+    const regularPrice = typeof p.regular_price === 'string' ? parseFloat(p.regular_price) : p.regular_price
+    if (regularPrice) {
+      return regularPrice
+    }
+    
+    // 기본적으로 price 사용
+    const price = typeof p.price === 'string' ? parseFloat(p.price) : p.price
+    return price || 0
+  }
+
+  const displayPrice = getDisplayPrice()
+
+  // 상품 클릭 시 최근 본 상품에 추가
+  const handleProductClick = () => {
+    addProduct({
+      id: p.id,
+      name: p.name,
+      image: getImageUrl(),
+      main_image: p.main_image,
+      images: p.images,
+      price: typeof p.price === 'string' ? parseFloat(p.price) : p.price,
+      sale_price: typeof p.sale_price === 'string' ? parseFloat(p.sale_price) : p.sale_price,
+      regular_price: typeof p.regular_price === 'string' ? parseFloat(p.regular_price) : p.regular_price,
+      discount_price: typeof p.discount_price === 'string' ? parseFloat(p.discount_price) : p.discount_price
+    })
+  }
+
   return (
-    <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
-      <div className="relative w-full aspect-square bg-gray-50">
-        {p.isNew && (
-          <span className="absolute top-2 left-2 z-10 px-2 py-1 bg-green-500 text-white text-xs font-bold rounded">
-            NEW
-          </span>
-        )}
-        {p.discount && (
-          <span className="absolute top-2 right-2 z-10 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded">
-            -{p.discount}%
-          </span>
-        )}
-        <OptimizedImage
-          src={p.image}
-          alt={p.name}
-          className="w-full h-full group-hover:scale-105 transition-transform duration-500"
-          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-        />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="flex justify-center gap-2">
-            <button className="bg-white/90 backdrop-blur px-3 py-1 rounded text-xs font-semibold hover:bg-white transition-colors">
-              WISH
-            </button>
-            <button className="bg-white/90 backdrop-blur px-3 py-1 rounded text-xs font-semibold hover:bg-white transition-colors">
-              ADD
-            </button>
+    <Link to={`/product/${p.id}`} onClick={handleProductClick}>
+      <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
+        <div className="relative w-full aspect-square bg-gray-50">
+          {p.isNew && (
+            <span className="absolute top-2 left-2 z-10 px-2 py-1 bg-green-500 text-white text-xs font-bold rounded">
+              NEW
+            </span>
+          )}
+          {p.discount && (
+            <span className="absolute top-2 right-2 z-10 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded">
+              -{p.discount}%
+            </span>
+          )}
+          <OptimizedImage
+            src={getImageUrl()}
+            alt={p.name}
+            className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+          <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="flex justify-center gap-2">
+              <button 
+                className="bg-white/90 backdrop-blur px-3 py-1 rounded text-xs font-semibold hover:bg-white transition-colors"
+                onClick={(e) => e.preventDefault()}
+              >
+                WISH
+              </button>
+              <button 
+                className="bg-white/90 backdrop-blur px-3 py-1 rounded text-xs font-semibold hover:bg-white transition-colors"
+                onClick={(e) => e.preventDefault()}
+              >
+                ADD
+              </button>
+            </div>
           </div>
         </div>
-        <div className="absolute left-2 bottom-2 text-[10px] text-white bg-black/40 px-1 rounded select-none md:hidden">
-          실제 판매되지 않는 상품입니다
+        <div className="px-3 sm:px-4 py-3 sm:py-4">
+          <h3 className="text-sm sm:text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem]">
+            {p.name}
+          </h3>
+          <div className="mt-2 text-base sm:text-lg font-bold text-gray-900">
+            {displayPrice.toLocaleString()}원
+          </div>
         </div>
       </div>
-      <div className="px-3 sm:px-4 py-3 sm:py-4">
-        <h3 className="text-sm sm:text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem]">
-          {p.name}
-        </h3>
-        <div className="mt-2 text-base sm:text-lg font-bold text-gray-900">
-          {p.price.toLocaleString()}원
-        </div>
-      </div>
-    </div>
+    </Link>
   );
 };
 
@@ -382,16 +477,31 @@ const ProductCard = ({ p }: { p: Product }) => {
    Best Seller Section (개선된 반응형)
    =============================== */
 const BestSellerSection = () => {
-  const mockProducts: Product[] = Array(10)
-    .fill(null)
-    .map((_, i) => ({
-      id: i + 1,
-      name: "Test용 문구 상품입니다",
-      price: 12000,
-      image:
-        "//ecimg.cafe24img.com/pg2160b96498953088/seoa0413/web/product/medium/20250819/dc52e36d4287a69cc69ae0dd5b6e9117.jpg",
-      discount: i % 3 === 0 ? 20 : undefined,
-    }));
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await api.getProducts({ limit: 5 })
+        
+        // 백엔드 응답 구조: { products: [...], pagination: {...} }
+        const productData = response.products || []
+        setProducts(productData.slice(0, 5))
+      } catch (error: any) {
+        console.error('❌ 베스트셀러 API 실패:', error)
+        setError(error.message || '상품을 불러오는데 실패했습니다.')
+        setProducts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
 
   return (
     <section className="py-8 sm:py-10 md:py-12 lg:py-14 bg-gray-50">
@@ -404,11 +514,50 @@ const BestSellerSection = () => {
             샵푸다 고객님들께 인정받은 추천 상품 !
           </p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-          {mockProducts.slice(0, 10).map((p) => (
-            <ProductCard key={p.id} p={p} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-5 gap-4 sm:gap-5 md:gap-6">
+            {Array(5).fill(null).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+                <div className="w-full aspect-square bg-gray-300"></div>
+                <div className="px-3 py-3">
+                  <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-300 rounded w-2/3"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <div className="text-red-500 mb-4">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-gray-600 font-semibold">베스트셀러 상품을 불러올 수 없습니다</p>
+            <p className="text-gray-500 text-sm mt-1">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : products.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+            {products.map((p) => (
+              <ProductCard key={p.id} p={p} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <div className="text-gray-400 mb-4">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+            </div>
+            <p className="text-gray-500">베스트셀러 상품이 없습니다.</p>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -450,18 +599,32 @@ const VideoSection = () => {
    =============================== */
 const NewItemsSection = () => {
   const [activeTab, setActiveTab] = useState(0);
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const tabs = ["전체", "신상품", "베스트", "세일"];
 
-  const mockNewProducts: Product[] = Array(10)
-    .fill(null)
-    .map((_, i) => ({
-      id: i + 1,
-      name: "클라리엘 딥클린 세탁세제",
-      price: 12000,
-      image:
-        "//ecimg.cafe24img.com/pg2160b96498953088/seoa0413/web/product/medium/20250819/dc52e36d4287a69cc69ae0dd5b6e9117.jpg",
-      isNew: i % 2 === 0,
-    }));
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await api.getProducts({ limit: 10 })
+        
+        // 백엔드 응답 구조: { products: [...], pagination: {...} }
+        const productData = response.products || []
+        setProducts(productData.slice(0, 10))
+      } catch (error: any) {
+        console.error('❌ 신상품 API 실패:', error)
+        setError(error.message || '신상품을 불러오는데 실패했습니다.')
+        setProducts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
 
   return (
     <section className="py-8 sm:py-10 md:py-12 lg:py-14">
@@ -500,11 +663,39 @@ const NewItemsSection = () => {
         </div>
 
         {/* Grid - 개선된 반응형 */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-          {mockNewProducts.slice(0, 10).map((p) => (
-            <ProductCard key={p.id} p={p} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+            {Array(10).fill(null).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+                <div className="w-full aspect-square bg-gray-300"></div>
+                <div className="px-3 py-3">
+                  <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-300 rounded w-2/3"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <div className="text-red-500 mb-4">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-gray-600 font-semibold">신상품을 불러올 수 없습니다</p>
+            <p className="text-gray-500 text-sm mt-1">{error}</p>
+          </div>
+        ) : products.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+            {products.map((p) => (
+              <ProductCard key={p.id} p={p} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">신상품이 없습니다.</p>
+          </div>
+        )}
 
         {/* 더보기 버튼 */}
         <div className="text-center mt-8 sm:mt-10">
