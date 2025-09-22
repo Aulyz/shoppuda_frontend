@@ -24,6 +24,18 @@ axiosInstance.interceptors.request.use(
         config.headers["X-Kakao-Token"] = kakaoToken
       }
     }
+    if (user?.loginType === "naver") {
+      const naverToken = localStorage.getItem("naver_access_token")
+      if (naverToken) {
+        config.headers["X-Naver-Token"] = naverToken
+      }
+    }
+    if (user?.loginType === "google") {
+      const googleToken = localStorage.getItem("google_access_token")
+      if (googleToken) {
+        config.headers["X-Google-Token"] = googleToken
+      }
+    }
     return config
   },
   (error) => Promise.reject(error)
@@ -125,6 +137,9 @@ export const api = {
 
   naverLogin: (data: { code: string; state: string }) =>
     axiosInstance.post("/naver/login/", data).then((res) => res.data),
+
+  googleLogin: (data: { code: string; state?: string }) =>
+    axiosInstance.post("/google/login/", data).then((res) => res.data),
 
   logout: () =>
     axiosInstance.post(`/account/logout`).then((res) => res.data),

@@ -25,6 +25,7 @@ import { useAuthStore } from './store/authStore'
 import LoginSuccess from './pages/LoginSuccess'
 import KakaoNameInput from './pages/KakaoNameInput'
 import NaverCallback from './pages/NaverCallback'
+import GoogleCallback from './pages/GoogleCallback'
 import UserDebug from './components/UserDebug'
 import { RecentlyViewedFull } from './components/RecentlyViewed'
 import ToastContainer from './components/ToastContainer'
@@ -179,6 +180,7 @@ function App() {
             <Route path="/recently-viewed" element={<RecentlyViewedFull />} />
             <Route path="/kakao/callback" element={<KakaoAuthHandler />} />
             <Route path="/naver/callback" element={<NaverCallback />} />
+            <Route path="/google/callback" element={<GoogleCallback />} />
             <Route path="/login/success" element={<LoginSuccess />} />
             <Route path="/kakao/name-input" element={<KakaoNameInput />} />
           </Routes>
