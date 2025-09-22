@@ -761,37 +761,42 @@ const SaleBannerSection = () => {
 };
 
 /* ===============================
-   Instagram Feed (간단한 버전)
+   Instagram Section (추후 구현 예정)
+   현재는 주석 처리하여 비활성화
    =============================== */
-const InstagramSection = () => {
-  const images = Array(6).fill(
-    "//ecimg.cafe24img.com/pg2160b96498953088/seoa0413/web/product/medium/20250819/dc52e36d4287a69cc69ae0dd5b6e9117.jpg"
-  );
+// interface InstagramPost {
+//   url: string;
+//   thumbnail: string;
+//   permalink: string;
+//   caption: string;
+// }
 
+// TODO: Instagram 피드 연동 기능 추후 구현
+const InstagramSection = () => {
+  // 현재는 간단한 Instagram 안내 섹션만 표시
   return (
     <section className="py-8 sm:py-10 md:py-12 lg:py-14 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-            @shoppuda_official
+            @shop_puda
           </h2>
           <p className="text-gray-500 text-sm sm:text-base">
             인스타그램에서 더 많은 소식을 만나보세요
           </p>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3 md:gap-4">
-          {images.map((img, idx) => (
-            <div key={idx} className="relative aspect-square overflow-hidden rounded-lg group cursor-pointer">
-              <OptimizedImage
-                src={img}
-                alt={`Instagram ${idx + 1}`}
-                className="w-full h-full group-hover:scale-110 transition-transform duration-500"
-                sizes="(max-width: 640px) 33vw, (max-width: 768px) 33vw, 16vw"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300" />
-            </div>
-          ))}
+        
+        {/* 임시 안내 메시지 */}
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z"/>
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">Instagram 피드 준비 중</h3>
+          <p className="text-gray-500 mb-6">곧 멋진 콘텐츠들을 만나보실 수 있습니다!</p>
         </div>
+        
         <div className="text-center mt-6 sm:mt-8">
           <a
             href="https://www.instagram.com/shop_puda/"

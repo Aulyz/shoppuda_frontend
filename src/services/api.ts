@@ -342,6 +342,10 @@ export const api = {
       }
     }
   },
+
+  // Instagram API (추후 구현 예정)
+  // getInstagramFeed: () =>
+  //   axiosInstance.get(`/instagram/feed/`).then((res) => res.data),
 }
 
 export default api
