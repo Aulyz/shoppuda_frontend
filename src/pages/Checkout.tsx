@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from 'react-query'
-import { MapPinIcon, PhoneIcon, UserIcon } from '@heroicons/react/24/outline'
+import { MapPinIcon, PhoneIcon, UserIcon, TicketIcon, TrashIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { api } from '../services/api'
 import DaumPostcode from '../components/DaumPostcode'
@@ -22,6 +22,11 @@ function Checkout() {
   })
   const [paymentMethod, setPaymentMethod] = useState('card')
   const [showPostcode, setShowPostcode] = useState(false)
+  
+  // 쿠폰 관련 상태
+  const [selectedCoupon, setSelectedCoupon] = useState<any>(null)
+  const [showCouponList, setShowCouponList] = useState(false)
+  const [couponDiscount, setCouponDiscount] = useState(0)
 
   // 바로구매 여부 확인
   const isDirectPurchase = location.state?.directPurchase
@@ -45,6 +50,9 @@ function Checkout() {
     }
   )
 
+  // 내 쿠폰 조회
+  const { data: myCoupons } = useQuery('myCoupons', api.getMyCoupons)
+
   const isLoading = isDirectPurchase ? addressesLoading : checkoutLoading
 
   // 바로구매용 데이터 구성
@@ -65,6 +73,31 @@ function Checkout() {
     shipping_fee: 0,
     total_amount: directProduct ? (directProduct.discount_price || directProduct.price) * directProduct.quantity : 0
   } : checkoutInfo
+
+  // 쿠폰 할인이 적용된 총 결제 금액 계산
+  const subtotal = displayData?.subtotal || 0
+  const shippingFee = displayData?.shipping_fee || 0
+  const discountedSubtotal = Math.max(0, subtotal - couponDiscount)
+  const finalTotalAmount = discountedSubtotal + shippingFee
+
+  // 장바구니 금액이 변경될 때 쿠폰 할인 금액 다시 계산
+  useEffect(() => {
+    if (selectedCoupon && subtotal > 0) {
+      const recalculateDiscount = async () => {
+        try {
+          const response = await api.calculateDiscount(selectedCoupon.id, subtotal)
+          if (response.success) {
+            setCouponDiscount(response.discount_amount || 0)
+          }
+        } catch (error) {
+          // 오류 발생 시 쿠폰 해제
+          setSelectedCoupon(null)
+          setCouponDiscount(0)
+        }
+      }
+      recalculateDiscount()
+    }
+  }, [subtotal, selectedCoupon])
 
   // 기본 배송지 선택
   useEffect(() => {
@@ -108,6 +141,59 @@ function Checkout() {
     }
   )
 
+  // 쿠폰 선택 핸들러
+  const handleSelectCoupon = async (coupon: any) => {
+    try {
+      if (coupon.id === selectedCoupon?.id) {
+        // 같은 쿠폰을 다시 클릭하면 선택 해제
+        setSelectedCoupon(null)
+        setCouponDiscount(0)
+        setShowCouponList(false)
+        return
+      }
+
+      // 쿠폰 변경 시 알림
+      if (selectedCoupon) {
+        toast(`기존 쿠폰을 해제하고 ${coupon.coupon?.name || coupon.name}으로 변경합니다`, {
+          icon: '🔄'
+        })
+      }
+
+      // 쿠폰 할인 금액 계산
+      const response = await api.calculateDiscount(coupon.id, subtotal)
+      if (response.success) {
+        // 새로운 쿠폰 적용
+        setSelectedCoupon(coupon)
+        setCouponDiscount(response.discount_amount || 0)
+        setShowCouponList(false)
+        toast.success(`${coupon.coupon?.name || coupon.name} 쿠폰이 적용되었습니다`)
+      } else {
+        // API 응답이 실패인 경우
+        setSelectedCoupon(null)
+        setCouponDiscount(0)
+        toast.error(response.message || '쿠폰을 적용할 수 없습니다')
+      }
+    } catch (error: any) {
+      console.error('쿠폰 적용 오류:', error)
+      // 에러 발생 시 상태 초기화
+      setSelectedCoupon(null)
+      setCouponDiscount(0)
+      
+      if (error.message) {
+        toast.error(error.message)
+      } else {
+        toast.error(error.response?.data?.message || '쿠폰 적용 중 오류가 발생했습니다')
+      }
+    }
+  }
+
+  // 쿠폰 적용 해제
+  const handleRemoveCoupon = () => {
+    setSelectedCoupon(null)
+    setCouponDiscount(0)
+    toast.success('쿠폰이 해제되었습니다')
+  }
+
   const handlePostcodeComplete = (data: { address: string; zonecode: string }) => {
     setNewAddress({
       ...newAddress,
@@ -122,6 +208,12 @@ function Checkout() {
 
     let checkoutData: any = {
       payment_method: paymentMethod
+    }
+
+    // 선택된 쿠폰 정보 추가
+    if (selectedCoupon) {
+      checkoutData.coupon_id = selectedCoupon.id
+      checkoutData.discount_amount = couponDiscount
     }
 
     if (useNewAddress) {
@@ -450,25 +542,128 @@ function Checkout() {
               </div>
 
               {/* 금액 정보 */}
-              <div className="space-y-2 py-4 border-t">
+              <div className="space-y-3 py-4 border-t">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">상품 금액</span>
-                  <span>₩{displayData.subtotal?.toLocaleString()}</span>
+                  <span>₩{subtotal.toLocaleString()}</span>
                 </div>
+                
+                {/* 쿠폰 선택 섹션 */}
+                <div className="border-t border-b py-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 flex items-center text-sm">
+                      <TicketIcon className="w-4 h-4 mr-1" />
+                      할인쿠폰
+                    </span>
+                    <button
+                      onClick={() => setShowCouponList(!showCouponList)}
+                      className="text-sm text-orange-600 hover:text-pink-600 font-medium"
+                    >
+                      {selectedCoupon ? '변경' : '선택'}
+                    </button>
+                  </div>
+                  
+                  {/* 선택된 쿠폰 표시 */}
+                  {selectedCoupon && (
+                    <div className="bg-orange-50 p-3 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-medium text-orange-800 text-sm">
+                            {selectedCoupon.coupon?.name || selectedCoupon.name || 'Unknown Coupon'}
+                          </p>
+                          <p className="text-xs text-orange-600">
+                            {selectedCoupon.coupon?.description || selectedCoupon.description || 'No description'}
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleRemoveCoupon}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 쿠폰 목록 */}
+                  {showCouponList && (
+                    <div className="max-h-40 overflow-y-auto space-y-2">
+                      {myCoupons?.user_coupons?.length > 0 ? (
+                        myCoupons.user_coupons
+                          .filter((userCoupon: any) => !userCoupon.is_used && !userCoupon.is_expired)
+                          .map((userCoupon: any) => (
+                          <div
+                            key={userCoupon.id}
+                            onClick={() => handleSelectCoupon(userCoupon)}
+                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                              selectedCoupon?.id === userCoupon.id
+                                ? 'border-orange-400 bg-orange-50'
+                                : 'border-gray-200 hover:border-orange-300 hover:bg-orange-25'
+                            }`}
+                          >
+                            <p className="font-medium text-sm">
+                              {userCoupon.coupon?.name || userCoupon.name || 'Unknown Coupon'}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {userCoupon.coupon?.description || userCoupon.description || 'No description'}
+                            </p>
+                            <div className="flex justify-between items-center mt-1">
+                              <p className="text-xs text-green-600">사용 가능</p>
+                              {userCoupon.expired_at && (
+                                <p className="text-xs text-gray-500">
+                                  {new Date(userCoupon.expired_at).toLocaleDateString()}까지
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-3">
+                          사용 가능한 쿠폰이 없습니다
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* 할인 금액 표시 */}
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-orange-600 text-sm">
+                    <span>쿠폰 할인</span>
+                    <span className="font-semibold">-₩{couponDiscount.toLocaleString()}</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">배송비</span>
                   <span>
-                    {displayData.shipping_fee === 0 
+                    {shippingFee === 0 
                       ? '무료' 
-                      : `₩${displayData.shipping_fee?.toLocaleString()}`}
+                      : `₩${shippingFee.toLocaleString()}`}
                   </span>
                 </div>
+                
                 <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                  {couponDiscount > 0 && (
+                    <div className="w-full">
+                      <div className="flex justify-between text-sm text-gray-500 mb-2">
+                        <span>할인 전 금액</span>
+                        <span className="line-through">₩{(subtotal + shippingFee).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-between font-bold text-lg">
                   <span>총 결제 금액</span>
-                  <span className="text-orange-600">
-                    ₩{displayData.total_amount?.toLocaleString()}
+                  <span className={couponDiscount > 0 ? "text-red-600" : "text-orange-600"}>
+                    ₩{finalTotalAmount.toLocaleString()}
                   </span>
                 </div>
+                {couponDiscount > 0 && (
+                  <p className="text-sm text-red-600 text-right">
+                    ₩{couponDiscount.toLocaleString()} 할인 적용됨!
+                  </p>
+                )}
               </div>
 
               {/* 결제 버튼 */}
@@ -477,7 +672,7 @@ function Checkout() {
                 disabled={checkoutMutation.isLoading}
                 className="w-full py-3 bg-gradient-to-r from-orange-400 to-pink-400 text-white rounded-lg font-semibold hover:from-orange-500 hover:to-pink-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {checkoutMutation.isLoading ? '처리 중...' : `₩${displayData.total_amount?.toLocaleString()} 결제하기`}
+                {checkoutMutation.isLoading ? '처리 중...' : `₩${finalTotalAmount.toLocaleString()} 결제하기`}
               </button>
 
               <p className="text-xs text-gray-500 text-center mt-3">

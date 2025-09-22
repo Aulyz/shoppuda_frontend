@@ -105,21 +105,33 @@ function Cart() {
         return
       }
 
-      // 이미 다른 쿠폰이 선택되어 있으면 교체 안내
+      // 쿠폰 변경 시 알림
       if (selectedCoupon) {
-        toast.info(`기존 쿠폰을 해제하고 ${coupon.coupon?.name || coupon.name}으로 변경합니다`)
+        toast(`기존 쿠폰을 해제하고 ${coupon.coupon?.name || coupon.name}으로 변경합니다`, {
+          icon: '🔄'
+        })
       }
 
       // 쿠폰 할인 금액 계산
       const response = await api.calculateDiscount(coupon.id, subtotal)
       if (response.success) {
+        // 새로운 쿠폰 적용
         setSelectedCoupon(coupon)
         setCouponDiscount(response.discount_amount || 0)
         setShowCouponList(false)
-        toast.success(`${coupon.coupon?.name || coupon.name} 쿠폰이 적용되었습니다 (1개 쿠폰만 적용 가능)`)
+        toast.success(`${coupon.coupon?.name || coupon.name} 쿠폰이 적용되었습니다`)
+      } else {
+        // API 응답이 실패인 경우
+        setSelectedCoupon(null)
+        setCouponDiscount(0)
+        toast.error(response.message || '쿠폰을 적용할 수 없습니다')
       }
     } catch (error: any) {
       console.error('쿠폰 적용 오류:', error)
+      // 에러 발생 시 상태 초기화
+      setSelectedCoupon(null)
+      setCouponDiscount(0)
+      
       if (error.message) {
         toast.error(error.message)
       } else {
