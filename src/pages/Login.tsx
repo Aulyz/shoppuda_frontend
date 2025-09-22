@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../services/api';
 import KakaoLogin from '../components/KakaoLogin';
+import NaverLogin from '../components/NaverLogin';
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -58,6 +59,40 @@ function Login() {
   const handleKakaoFailure = (error: any) => {
     console.error('카카오 로그인 오류:', error);
     setError('카카오 로그인에 실패했습니다.');
+  };
+
+  const handleNaverSuccess = async (naverData: any) => {
+    try {
+      console.log('네이버 로그인 데이터:', naverData);
+      
+      // 네이버 토큰을 localStorage에 저장
+      localStorage.setItem('naver_access_token', naverData.accessToken);
+      if (naverData.refreshToken) {
+        localStorage.setItem('naver_refresh_token', naverData.refreshToken);
+      }
+      
+      // 백엔드에 네이버 로그인 정보 전송하여 JWT 토큰 받기
+      const response = await api.naverLogin(naverData);
+      
+      if (response.success) {
+        // JWT 토큰과 사용자 정보 저장
+        login(response.access, response.refresh, response.user);
+        
+        const searchParams = new URLSearchParams(location.search);
+        const nextUrl = searchParams.get('next') || '/';
+        navigate(nextUrl);
+      } else {
+        setError(response.error || '네이버 로그인에 실패했습니다.');
+      }
+    } catch (err: any) {
+      console.error('네이버 로그인 처리 실패:', err);
+      setError('네이버 로그인에 실패했습니다.');
+    }
+  };
+
+  const handleNaverFailure = (error: any) => {
+    console.error('네이버 로그인 오류:', error);
+    setError('네이버 로그인에 실패했습니다.');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -247,11 +282,10 @@ function Login() {
                 </button>
                 
                 {/* 네이버 로그인 */}
-                <button className="w-12 h-12 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-colors duration-200">
-                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z"/>
-                  </svg>
-                </button>
+                <NaverLogin 
+                  onSuccess={handleNaverSuccess}
+                  onFailure={handleNaverFailure}
+                />
               </div>
             </div>
             

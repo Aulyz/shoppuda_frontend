@@ -123,6 +123,9 @@ export const api = {
   kakaoLogin: (data: { kakao_id: string; email: string; nickname: string }) =>
     axiosInstance.post("/accounts/api/jwt/kakao-login/", data).then((res) => res.data),
 
+  naverLogin: (data: { code: string; state: string }) =>
+    axiosInstance.post("/naver/login/", data).then((res) => res.data),
+
   logout: () =>
     axiosInstance.post(`/account/logout`).then((res) => res.data),
 
