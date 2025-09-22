@@ -26,6 +26,7 @@ import LoginSuccess from './pages/LoginSuccess'
 import KakaoNameInput from './pages/KakaoNameInput'
 import UserDebug from './components/UserDebug'
 import RecentlyViewed from './components/RecentlyViewed'
+import ToastContainer from './components/ToastContainer'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -180,6 +181,7 @@ function App() {
           </Routes>
         </Layout>
         <UserDebug />
+        <ToastContainer />
         <Toaster 
           position="top-right"
           toastOptions={{

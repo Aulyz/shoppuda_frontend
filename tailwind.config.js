@@ -32,6 +32,8 @@ export default {
       animation: {
         'shimmer': 'shimmer 2s infinite linear',
         'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'slide-in-right': 'slide-in-right 0.3s ease-out',
+        'fade-in': 'fade-in 0.2s ease-out',
       },
       keyframes: {
         shimmer: {
@@ -40,6 +42,24 @@ export default {
           },
           '100%': {
             'background-position': 'calc(200px + 100%) 0'
+          }
+        },
+        'slide-in-right': {
+          '0%': {
+            transform: 'translateX(100%)',
+            opacity: '0'
+          },
+          '100%': {
+            transform: 'translateX(0)',
+            opacity: '1'
+          }
+        },
+        'fade-in': {
+          '0%': {
+            opacity: '0'
+          },
+          '100%': {
+            opacity: '1'
           }
         }
       },

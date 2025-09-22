@@ -1,13 +1,18 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { Link, useNavigate } from 'react-router-dom'
-import { TrashIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline'
+import { TrashIcon, PlusIcon, MinusIcon, TicketIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { api } from '../services/api'
 
 function Cart() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  
+  // 쿠폰 관련 상태
+  const [selectedCoupon, setSelectedCoupon] = useState<any>(null)
+  const [showCouponList, setShowCouponList] = useState(false)
+  const [couponDiscount, setCouponDiscount] = useState(0)
   
   // 페이지 접속 시 맨 위로 스크롤
   useEffect(() => {
@@ -16,6 +21,44 @@ function Cart() {
   
   // 장바구니 데이터 조회
   const { data: cart, isLoading } = useQuery('cart', api.getCart)
+  
+  // 내 쿠폰 조회
+  const { data: myCoupons } = useQuery('myCoupons', api.getMyCoupons)
+
+  // 총 상품 금액 계산
+  const subtotal = cart?.items?.reduce(
+    (sum: number, item: any) => {
+      // sale_price가 0이거나 null/undefined인 경우 price 사용
+      const salePrice = parseFloat(item.product.sale_price || '0');
+      const regularPrice = parseFloat(item.product.price || '0');
+      const price = salePrice > 0 ? salePrice : regularPrice;
+      return sum + price * item.quantity;
+    },
+    0
+  ) || 0
+
+  const shippingFee = subtotal >= 30000 ? 0 : 3000
+  const discountedSubtotal = Math.max(0, subtotal - couponDiscount) // 0보다 작아지지 않도록
+  const totalAmount = discountedSubtotal + shippingFee
+
+  // 장바구니 금액이 변경될 때 쿠폰 할인 금액 다시 계산
+  useEffect(() => {
+    if (selectedCoupon && subtotal > 0) {
+      const recalculateDiscount = async () => {
+        try {
+          const response = await api.calculateDiscount(selectedCoupon.id, subtotal)
+          if (response.success) {
+            setCouponDiscount(response.discount_amount || 0)
+          }
+        } catch (error) {
+          // 오류 발생 시 쿠폰 해제
+          setSelectedCoupon(null)
+          setCouponDiscount(0)
+        }
+      }
+      recalculateDiscount()
+    }
+  }, [subtotal, selectedCoupon])
 
   // 수량 변경 뮤테이션
   const updateQuantityMutation = useMutation(
@@ -51,6 +94,47 @@ function Cart() {
     removeItemMutation.mutate(itemId)
   }
 
+  // 쿠폰 선택 핸들러
+  const handleSelectCoupon = async (coupon: any) => {
+    try {
+      if (coupon.id === selectedCoupon?.id) {
+        // 같은 쿠폰을 다시 클릭하면 선택 해제
+        setSelectedCoupon(null)
+        setCouponDiscount(0)
+        setShowCouponList(false)
+        return
+      }
+
+      // 이미 다른 쿠폰이 선택되어 있으면 교체 안내
+      if (selectedCoupon) {
+        toast.info(`기존 쿠폰을 해제하고 ${coupon.coupon?.name || coupon.name}으로 변경합니다`)
+      }
+
+      // 쿠폰 할인 금액 계산
+      const response = await api.calculateDiscount(coupon.id, subtotal)
+      if (response.success) {
+        setSelectedCoupon(coupon)
+        setCouponDiscount(response.discount_amount || 0)
+        setShowCouponList(false)
+        toast.success(`${coupon.coupon?.name || coupon.name} 쿠폰이 적용되었습니다 (1개 쿠폰만 적용 가능)`)
+      }
+    } catch (error: any) {
+      console.error('쿠폰 적용 오류:', error)
+      if (error.message) {
+        toast.error(error.message)
+      } else {
+        toast.error(error.response?.data?.message || '쿠폰 적용 중 오류가 발생했습니다')
+      }
+    }
+  }
+
+  // 쿠폰 적용 해제
+  const handleRemoveCoupon = () => {
+    setSelectedCoupon(null)
+    setCouponDiscount(0)
+    toast.success('쿠폰이 해제되었습니다')
+  }
+
   // 로딩 상태 렌더링
   if (isLoading) {
     return (
@@ -68,18 +152,6 @@ function Cart() {
       </div>
     )
   }
-
-  // 총 상품 금액 계산
-  const subtotal = cart?.items?.reduce(
-    (sum: number, item: any) => {
-      const price = item.product.sale_price || item.product.price;
-      return sum + parseFloat(price) * item.quantity;
-    },
-    0
-  ) || 0
-
-  const shippingFee = subtotal >= 30000 ? 0 : 3000
-  const totalAmount = subtotal + shippingFee
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -129,7 +201,7 @@ function Cart() {
                       
                       {/* 가격 정보 - 모바일에서 가로 정렬 */}
                       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
-                        {item.product.sale_price ? (
+                        {item.product.sale_price && parseFloat(item.product.sale_price) > 0 ? (
                           <>
                             <span className="text-lg sm:text-xl font-bold text-orange-600">
                               ₩{parseFloat(item.product.sale_price).toLocaleString()}
@@ -171,7 +243,12 @@ function Cart() {
                         <div className="text-center sm:text-left">
                           <span className="text-sm text-gray-500">소계: </span>
                           <span className="font-semibold text-gray-900">
-                            ₩{(parseFloat(item.product.sale_price || item.product.price) * item.quantity).toLocaleString()}
+                            ₩{(() => {
+                              const salePrice = parseFloat(item.product.sale_price || '0');
+                              const regularPrice = parseFloat(item.product.price || '0');
+                              const price = salePrice > 0 ? salePrice : regularPrice;
+                              return (price * item.quantity).toLocaleString();
+                            })()}
                           </span>
                         </div>
                         
@@ -200,6 +277,93 @@ function Cart() {
                     <span className="text-gray-600">상품 금액</span>
                     <span className="font-semibold">₩{subtotal.toLocaleString()}</span>
                   </div>
+                  
+                  {/* 쿠폰 선택 섹션 */}
+                  <div className="border-t border-b py-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600 flex items-center">
+                        <TicketIcon className="w-4 h-4 mr-1" />
+                        할인쿠폰
+                      </span>
+                      <button
+                        onClick={() => setShowCouponList(!showCouponList)}
+                        className="text-sm text-orange-600 hover:text-pink-600 font-medium"
+                      >
+                        {selectedCoupon ? '변경' : '선택'}
+                      </button>
+                    </div>
+                    
+                    {/* 선택된 쿠폰 표시 */}
+                    {selectedCoupon && (
+                      <div className="bg-orange-50 p-3 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium text-orange-800">
+                              {selectedCoupon.coupon?.name || selectedCoupon.name || 'Unknown Coupon'}
+                            </p>
+                            <p className="text-sm text-orange-600">
+                              {selectedCoupon.coupon?.description || selectedCoupon.description || 'No description'}
+                            </p>
+                          </div>
+                          <button
+                            onClick={handleRemoveCoupon}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 쿠폰 목록 */}
+                    {showCouponList && (
+                      <div className="max-h-40 overflow-y-auto space-y-2">
+                        {myCoupons?.user_coupons?.length > 0 ? (
+                          myCoupons.user_coupons
+                            .filter((userCoupon: any) => !userCoupon.is_used && !userCoupon.is_expired)
+                            .map((userCoupon: any) => (
+                            <div
+                              key={userCoupon.id}
+                              onClick={() => handleSelectCoupon(userCoupon)}
+                              className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                                selectedCoupon?.id === userCoupon.id
+                                  ? 'border-orange-400 bg-orange-50'
+                                  : 'border-gray-200 hover:border-orange-300 hover:bg-orange-25'
+                              }`}
+                            >
+                              <p className="font-medium text-sm">
+                                {userCoupon.coupon?.name || userCoupon.name || 'Unknown Coupon'}
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                {userCoupon.coupon?.description || userCoupon.description || 'No description'}
+                              </p>
+                              <div className="flex justify-between items-center mt-1">
+                                <p className="text-xs text-green-600">사용 가능</p>
+                                {userCoupon.expired_at && (
+                                  <p className="text-xs text-gray-500">
+                                    {new Date(userCoupon.expired_at).toLocaleDateString()}까지
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-gray-500 text-center py-3">
+                            사용 가능한 쿠폰이 없습니다
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* 할인 금액 표시 */}
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between text-orange-600">
+                      <span>쿠폰 할인</span>
+                      <span className="font-semibold">-₩{couponDiscount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between">
                     <span className="text-gray-600">배송비</span>
                     <span className={`font-semibold ${shippingFee === 0 ? 'text-green-600' : ''}`}>
@@ -217,12 +381,23 @@ function Cart() {
                 
                 {/* 총 결제 금액 */}
                 <div className="border-t pt-4 mb-4 sm:mb-6">
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-gray-500 mb-2">
+                      <span>할인 전 금액</span>
+                      <span className="line-through">₩{(subtotal + shippingFee).toLocaleString()}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-lg sm:text-xl font-bold">
                     <span>총 결제 금액</span>
-                    <span className="text-orange-600">
+                    <span className={couponDiscount > 0 ? "text-red-600" : "text-orange-600"}>
                       ₩{totalAmount.toLocaleString()}
                     </span>
                   </div>
+                  {couponDiscount > 0 && (
+                    <p className="text-sm text-red-600 mt-1 text-right">
+                      ₩{couponDiscount.toLocaleString()} 할인 적용됨!
+                    </p>
+                  )}
                 </div>
                 
                 {/* 버튼들 */}

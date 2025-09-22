@@ -1,5 +1,8 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
+import { api } from '../services/api'
+import { useToastStore } from '../store/toastStore'
+import { useAuthStore } from '../store/authStore'
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const STORAGE_KEY = 'bannerHiddenUntil';
@@ -23,33 +26,189 @@ function setHiddenForOneDay() {
 }
 
 const BannerNotification = () => {
-  const [isHidden, setIsHidden] = useState(true);
+  const [isHidden, setIsHidden] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+  const [ownedCoupons, setOwnedCoupons] = useState<string[]>([])
+  const { addToast } = useToastStore()
+  const { isAuthenticated, user } = useAuthStore()
 
   useEffect(() => {
-    const until = getHiddenUntil();
-    setIsHidden(until > Date.now());
-  }, []);
+    const until = getHiddenUntil()
+    setIsHidden(until > Date.now())
+  }, [])
+
+  // 사용자 보유 쿠폰 가져오기
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchOwnedCoupons()
+    }
+  }, [isAuthenticated])
+
+  const fetchOwnedCoupons = async () => {
+    try {
+      const response = await api.getMyCoupons()
+      const coupons = response.user_coupons || []
+      const couponCodes = coupons
+        .filter((coupon: any) => coupon.status === 'ISSUED')
+        .map((coupon: any) => coupon.coupon?.code)
+        .filter(Boolean)
+      setOwnedCoupons(couponCodes)
+    } catch (error) {
+      // 쿠폰 조회 실패는 조용히 처리
+      setOwnedCoupons([])
+    }
+  }
 
   const handleCloseForToday = () => {
-    setHiddenForOneDay();
-    setIsHidden(true);
-  };
+    setHiddenForOneDay()
+    setIsHidden(true)
+  }
 
-  if (isHidden) return null;
+  const handleClaimCoupon = async (e: React.MouseEvent, couponCode: string) => {
+    e.preventDefault()
+    
+    if (!isAuthenticated) {
+      addToast({
+        type: 'warning',
+        title: '로그인 필요',
+        message: '쿠폰을 받으려면 먼저 로그인해주세요.',
+      })
+      return
+    }
+
+    if (isLoading) return
+
+    setIsLoading(true)
+    
+    try {
+      const response = await api.claimCoupon(couponCode)
+      
+      addToast({
+        type: 'success',
+        title: '쿠폰 발급 완료!',
+        message: `${response.coupon?.name || '쿠폰'}이 발급되었습니다. 마이페이지에서 확인하세요.`,
+        duration: 5000,
+      })
+      
+      // 보유 쿠폰 목록 업데이트
+      setOwnedCoupons(prev => [...prev, couponCode])
+      
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message ||
+                          '쿠폰 발급에 실패했습니다.'
+      
+      addToast({
+        type: 'error',
+        title: '쿠폰 발급 실패',
+        message: errorMessage,
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 사용자명 표시 함수
+  const getDisplayName = () => {
+    if (isAuthenticated && user) {
+      // 우선순위: first_name > last_name > username
+      if (user.first_name) {
+        return user.first_name
+      }
+      if (user.last_name) {
+        return user.last_name
+      }
+      if (user.username && !user.username.startsWith('kakao_')) {
+        return user.username
+      }
+    }
+    return '고객'
+  }
+
+  if (isHidden) return null
+
+  // 배너 쿠폰 리스트
+  const bannerCoupons = [
+    {
+      code: 'WELCOME10',
+      name: '신규 회원 1000원 할인 쿠폰',
+      emoji: '🎉',
+      description: '신규 회원 가입 시'
+    },
+    {
+      code: 'FIRSTBUY15',
+      name: '첫 구매 3000원 할인 쿠폰',
+      emoji: '🛍️',
+      description: '첫 구매 시'
+    },
+    {
+      code: 'FREESHIP',
+      name: '5000원 할인 쿠폰',
+      emoji: '💰',
+      description: '특별 할인 혜택'
+    }
+  ]
 
   return (
     <div className="bg-gradient-to-r from-orange-100 to-pink-100 border-b border-orange-200 z-40">
-      <div className="container mx-auto relative flex items-center justify-center py-3 px-4">
-        {/* 메시지 */}
-        <div className="text-sm sm:text-base text-center">
-          <a href="#" className="text-orange-800 hover:text-pink-800 transition-colors duration-200 font-medium">
-            🎉 신규 회원 가입 시 10% 할인 쿠폰 증정! 🎉
-          </a>
+      <div className="container mx-auto relative py-4 px-4">
+        {/* 헤더 */}
+        <div className="text-center mb-3">
+          <h3 className="text-lg font-bold text-orange-800 mb-1">
+            {getDisplayName()} 님을 위한 혜택
+          </h3>
+          <p className="text-sm text-orange-700">
+            지금 바로 쿠폰을 받아보세요!
+          </p>
         </div>
 
-        {/* 닫기 */}
-        <div className="absolute right-0 pr-4 flex items-center space-x-3">
-          <label htmlFor="close_today" className="flex items-center text-xs sm:text-sm text-gray-600 cursor-pointer select-none">
+        {/* 쿠폰 리스트 */}
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-2">
+          {bannerCoupons.map((coupon) => {
+            const isOwned = ownedCoupons.includes(coupon.code)
+            
+            return (
+              <button
+                key={coupon.code}
+                onClick={(e) => !isOwned ? handleClaimCoupon(e, coupon.code) : undefined}
+                disabled={isLoading || isOwned}
+                className={`bg-white rounded-lg shadow-sm border px-3 py-2 
+                  text-xs sm:text-sm transition-all duration-200
+                  ${isOwned 
+                    ? 'border-gray-300 bg-gray-50 cursor-default opacity-75' 
+                    : isLoading 
+                      ? 'border-orange-200 opacity-60 cursor-not-allowed' 
+                      : 'border-orange-200 cursor-pointer hover:shadow-md hover:scale-105 hover:bg-orange-50'
+                  }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg">{coupon.emoji}</span>
+                  <div className="text-left">
+                    <div className={`font-semibold ${isOwned ? 'text-gray-600' : 'text-orange-800'}`}>
+                      {coupon.name}
+                    </div>
+                    <div className={`text-xs ${isOwned ? 'text-gray-500' : 'text-orange-600'}`}>
+                      {isOwned ? '수령완료' : coupon.description}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* 로딩 상태 */}
+        {isLoading && (
+          <div className="text-center">
+            <span className="inline-block animate-spin mr-2">⚪</span>
+            <span className="text-sm text-orange-700">쿠폰 발급 중...</span>
+          </div>
+        )}
+
+        {/* 닫기 버튼 */}
+        <div className="absolute top-2 right-2 flex items-center space-x-2">
+          <label htmlFor="close_today" className="hidden sm:flex items-center text-xs text-gray-600 cursor-pointer select-none">
             <input
               type="checkbox"
               id="close_today"
@@ -70,6 +229,6 @@ const BannerNotification = () => {
       </div>
     </div>
   );
-};
+}
 
-export default BannerNotification;
+export default BannerNotification

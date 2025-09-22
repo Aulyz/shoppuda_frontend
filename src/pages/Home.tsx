@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import RecentlyViewed from "../components/RecentlyViewed";
 import OptimizedImage from "../components/OptimizedImage";
+import { api } from "../services/api";
+import { useToastStore } from "../store/toastStore";
+import { useAuthStore } from "../store/authStore";
 
 // Swiper
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -91,65 +94,225 @@ const HeroSlider = () => {
    Coupon Section (개선된 반응형 카드)
    =============================== */
 const CouponSection = () => {
-  const userName = "고객";
-  const coupons = [1, 2, 3];
+  const [isLoading, setIsLoading] = useState(false)
+  const [ownedCoupons, setOwnedCoupons] = useState<string[]>([])
+  const { addToast } = useToastStore()
+  const { isAuthenticated, user } = useAuthStore()
+
+  // 사용자 보유 쿠폰 가져오기
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchOwnedCoupons()
+    }
+  }, [isAuthenticated])
+
+  const fetchOwnedCoupons = async () => {
+    try {
+      const response = await api.getMyCoupons()
+      const coupons = response.user_coupons || []
+      const couponCodes = coupons
+        .filter((coupon: any) => coupon.status === 'ISSUED')
+        .map((coupon: any) => coupon.coupon?.code)
+        .filter(Boolean)
+      setOwnedCoupons(couponCodes)
+    } catch (error) {
+      // 쿠폰 조회 실패는 조용히 처리
+      setOwnedCoupons([])
+    }
+  }
+
+  const handleClaimCoupon = async (e: React.MouseEvent, couponCode: string, couponName: string) => {
+    e.preventDefault()
+    
+    if (!isAuthenticated) {
+      addToast({
+        type: 'warning',
+        title: '로그인 필요',
+        message: '쿠폰을 받으려면 먼저 로그인해주세요.',
+      })
+      return
+    }
+
+    if (isLoading) return
+
+    setIsLoading(true)
+    
+    try {
+      const response = await api.claimCoupon(couponCode)
+      
+      addToast({
+        type: 'success',
+        title: '쿠폰 발급 완료!',
+        message: `${couponName}이 발급되었습니다. 마이페이지에서 확인하세요.`,
+        duration: 5000,
+      })
+      
+      // 보유 쿠폰 목록 업데이트
+      setOwnedCoupons(prev => [...prev, couponCode])
+      
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message ||
+                          '쿠폰 발급에 실패했습니다.'
+      
+      addToast({
+        type: 'error',
+        title: '쿠폰 발급 실패',
+        message: errorMessage,
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 사용자명 표시 함수
+  const getDisplayName = () => {
+    if (isAuthenticated && user) {
+      // 우선순위: first_name > last_name > username
+      if (user.first_name) {
+        return user.first_name
+      }
+      if (user.last_name) {
+        return user.last_name
+      }
+      if (user.username && !user.username.startsWith('kakao_')) {
+        return user.username
+      }
+    }
+    return '고객'
+  }
+
+  const coupons = [
+    {
+      code: 'WELCOME10',
+      name: '신규 회원 1000원 할인 쿠폰',
+      value: '1,000',
+      unit: '원',
+      description: 'VIP 신규고객 할인쿠폰'
+    },
+    {
+      code: 'FIRSTBUY15',
+      name: '첫 구매 3000원 할인 쿠폰',
+      value: '3,000',
+      unit: '원',
+      description: '첫 구매 특별 할인쿠폰'
+    },
+    {
+      code: 'FREESHIP',
+      name: '5000원 할인 쿠폰',
+      value: '5,000',
+      unit: '원',
+      description: '특별 할인 혜택쿠폰'
+    }
+  ];
 
   return (
     <section className="w-full py-8 sm:py-10 md:py-12 lg:py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-700 text-center mb-6 sm:mb-8">
-          {userName} 님을 위한 혜택
+          {getDisplayName()} 님을 위한 혜택
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-          {coupons.map((i) => (
-            <div
-              key={i}
-              className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
-            >
-              <div className="flex">
-                <div className="flex-1 px-5 py-5 sm:px-6 sm:py-6">
-                  <span className="text-xs sm:text-sm text-orange-600 font-bold">
-                    샵푸다
-                  </span>
-                  <div className="mt-2">
-                    <span className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-                      1,000
+          {coupons.map((coupon) => {
+            const isOwned = ownedCoupons.includes(coupon.code)
+            
+            return (
+              <div
+                key={coupon.code}
+                className={`bg-white rounded-2xl shadow-lg transition-shadow duration-300 overflow-hidden ${
+                  isOwned ? 'opacity-75' : 'hover:shadow-xl'
+                }`}
+              >
+                <div className="flex">
+                  <div className="flex-1 px-5 py-5 sm:px-6 sm:py-6">
+                    <span className={`text-xs sm:text-sm font-bold ${
+                      isOwned ? 'text-gray-500' : 'text-orange-600'
+                    }`}>
+                      샵푸다
                     </span>
-                    <span className="ml-1 text-sm sm:text-base text-gray-700">
-                      원
+                    <div className="mt-2">
+                      <span className={`text-2xl sm:text-3xl font-extrabold ${
+                        isOwned ? 'text-gray-600' : 'text-gray-900'
+                      }`}>
+                        {coupon.value}
+                      </span>
+                      <span className={`ml-1 text-sm sm:text-base ${
+                        isOwned ? 'text-gray-500' : 'text-gray-700'
+                      }`}>
+                        {coupon.unit}
+                      </span>
+                    </div>
+                    <span className={`block mt-2 text-xs sm:text-sm ${
+                      isOwned ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      {coupon.description}
                     </span>
                   </div>
-                  <span className="block mt-2 text-xs sm:text-sm text-gray-500">
-                    VIP 단골고객 할인쿠폰
-                  </span>
-                </div>
-                <div className="my-4 w-px bg-gray-200" />
-                <div className="w-32 sm:w-36 flex items-center justify-center">
-                  <button
-                    className="inline-flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 border-orange-400 text-orange-600 hover:bg-orange-50 text-xs sm:text-sm font-semibold transition-colors duration-200"
-                    aria-label="쿠폰 다운로드"
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
+                  <div className={`my-4 w-px ${isOwned ? 'bg-gray-300' : 'bg-gray-200'}`} />
+                  <div className="w-32 sm:w-36 flex items-center justify-center">
+                    <button
+                      onClick={(e) => !isOwned ? handleClaimCoupon(e, coupon.code, coupon.name) : undefined}
+                      disabled={isLoading || isOwned}
+                      className={`inline-flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 text-xs sm:text-sm font-semibold transition-colors duration-200 ${
+                        isOwned 
+                          ? 'border-gray-400 text-gray-500 cursor-default bg-gray-50' 
+                          : isLoading 
+                            ? 'border-orange-400 text-orange-600 opacity-60 cursor-not-allowed' 
+                            : 'border-orange-400 text-orange-600 hover:bg-orange-50'
+                      }`}
+                      aria-label={isOwned ? "수령완료" : "쿠폰 다운로드"}
                     >
-                      <path
-                        d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        fill="none"
-                      />
-                    </svg>
-                    <span>다운로드</span>
-                  </button>
+                      {isOwned ? (
+                        <>
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M20 6 9 17l-5-5"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              fill="none"
+                            />
+                          </svg>
+                          <span>수령완료</span>
+                        </>
+                      ) : isLoading ? (
+                        <>
+                          <div className="animate-spin w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full"></div>
+                          <span>발급중...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              fill="none"
+                            />
+                          </svg>
+                          <span>다운로드</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>

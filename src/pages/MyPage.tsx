@@ -17,8 +17,11 @@ import {
   TrashIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
-  Bars3Icon
+  Bars3Icon,
+  TicketIcon
 } from '@heroicons/react/24/outline';
+import CouponList from '../components/CouponList';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 declare global {
   interface Window {
@@ -68,7 +71,7 @@ const MyPage: React.FC = () => {
   const { user, accessToken, logout } = useAuthStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'profile' | 'addresses' | 'orders' | 'points' | 'password'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'addresses' | 'orders' | 'points' | 'coupons' | 'password'>('profile');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
@@ -290,6 +293,7 @@ const MyPage: React.FC = () => {
     { id: 'addresses', label: '배송지 관리', icon: MapPinIcon },
     { id: 'orders', label: '주문 내역', icon: ClipboardDocumentListIcon },
     { id: 'points', label: '포인트', icon: CreditCardIcon },
+    { id: 'coupons', label: '내 쿠폰', icon: TicketIcon },
     { id: 'password', label: '비밀번호 변경', icon: KeyIcon }
   ];
 
@@ -722,6 +726,16 @@ const MyPage: React.FC = () => {
                       <p className="text-center text-gray-500 py-4">포인트 내역이 없습니다.</p>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* 쿠폰 관리 탭 */}
+              {activeTab === 'coupons' && (
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">내 쿠폰</h3>
+                  <ErrorBoundary>
+                    <CouponList />
+                  </ErrorBoundary>
                 </div>
               )}
 
