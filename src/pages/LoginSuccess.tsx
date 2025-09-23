@@ -30,17 +30,22 @@ const LoginSuccess = () => {
               login(access, refresh, data.profile);
               
               toast.success(`${data.profile.first_name || data.profile.username}님, 환영합니다!`);
-              navigate("/");
+              
+              // redirect 파라미터 처리
+              const redirectUrl = params.get('redirect') || '/';
+              navigate(redirectUrl);
             }
           } else {
             // 사용자 정보를 가져올 수 없어도 토큰만으로 로그인
             login(access, refresh);
-            navigate("/");
+            const redirectUrl = params.get('redirect') || '/';
+            navigate(redirectUrl);
           }
         } catch (error) {
           // 에러가 발생해도 토큰만으로 로그인 시도
           login(access, refresh);
-          navigate("/");
+          const redirectUrl = params.get('redirect') || '/';
+          navigate(redirectUrl);
         }
       } else {
         // 토큰이 없으면 로그인 페이지로

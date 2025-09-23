@@ -6,6 +6,7 @@ import api from '../services/api';
 import { Heart, ShoppingCart, Trash2 } from 'lucide-react';
 import { ProductGridSkeleton } from '../components/Skeleton';
 import OptimizedImage from '../components/OptimizedImage';
+import AuthRequiredAlert from '../components/AuthRequiredAlert';
 
 interface WishlistItem {
   id: number;
@@ -30,8 +31,7 @@ const Wishlist: React.FC = () => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.error('로그인이 필요합니다.');
-      navigate('/login');
+      setLoading(false);
       return;
     }
     fetchWishlist();
@@ -107,6 +107,23 @@ const Wishlist: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  // 인증되지 않은 사용자 처리
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">위시리스트</h1>
+          <AuthRequiredAlert
+            message="위시리스트를 확인하려면 먼저 로그인해주세요."
+            emoji="❤️"
+            autoRedirect={true}
+            redirectDelay={3000}
+          />
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -40,8 +40,9 @@ const GoogleCallback: React.FC = () => {
             localStorage.setItem('google_access_token', response.google_access_token);
           }
 
-          // 메인 페이지로 리다이렉트
-          navigate('/');
+          // redirect 파라미터 처리
+          const redirectUrl = searchParams.get('redirect') || '/';
+          navigate(redirectUrl);
         } else {
           console.error('구글 로그인 실패:', response.error);
           navigate('/login?error=google_login_failed');

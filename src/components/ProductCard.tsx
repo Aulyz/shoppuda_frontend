@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { HeartIcon, ShoppingBagIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-hot-toast';
@@ -38,6 +38,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [loading, setLoading] = useState(false);
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -63,7 +64,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
     if (!isAuthenticated) {
       toast('로그인이 필요합니다.', { icon: 'ℹ️' });
-      navigate('/login');
+      const currentPath = location.pathname + location.search;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
       return;
     }
 
@@ -88,8 +90,33 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      toast('로그인이 필요합니다.', { icon: 'ℹ️' });
-      navigate('/login');
+      // 비회원 장바구니: 로컬스토리지에 저장
+      try {
+        const guestCart = JSON.parse(localStorage.getItem('guestCart') || '{"items": []}');
+        const existingItem = guestCart.items.find((item: any) => item.product.id === product.id);
+        
+        if (existingItem) {
+          existingItem.quantity += 1;
+        } else {
+          guestCart.items.push({
+            id: Date.now(), // 임시 ID
+            product: {
+              id: product.id,
+              name: product.name,
+              image: product.image || product.thumbnail,
+              price: product.price,
+              sale_price: product.discount_price,
+              slug: product.slug
+            },
+            quantity: 1
+          });
+        }
+        
+        localStorage.setItem('guestCart', JSON.stringify(guestCart));
+        toast.success('장바구니에 추가되었습니다.');
+      } catch (error) {
+        toast.error('장바구니 추가 중 오류가 발생했습니다.');
+      }
       return;
     }
 

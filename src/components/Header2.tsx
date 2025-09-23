@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "react-query";
 import BannerNotification from "./BannerNotification";
 import MainNavigation from "./MainNavigation";
@@ -19,6 +19,7 @@ import {
 
 const Header2 = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { clearCoupons } = useCouponStore();
@@ -119,6 +120,18 @@ const Header2 = () => {
       
       // 페이지 새로고침 (F5와 동일한 효과)
       window.location.reload();
+    }
+  };
+
+  // 프로필 아이콘 클릭 핸들러
+  const handleProfileClick = () => {
+    if (!isAuthenticated) {
+      // 비인증 사용자는 로그인 페이지로 리디렉션
+      const currentPath = location.pathname + location.search;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+    } else {
+      // 인증된 사용자는 마이페이지로 이동
+      navigate('/mypage');
     }
   };
 
@@ -257,7 +270,11 @@ const Header2 = () => {
 
             {/* Profile Dropdown */}
             <div className="relative group hidden sm:block">
-              <button className="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="Profile menu">
+              <button 
+                onClick={handleProfileClick}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors" 
+                aria-label="Profile menu"
+              >
                 <UserIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
               </button>
               {/* DropDownMenu - mt-2를 제거하고 top으로 위치 조정 */}

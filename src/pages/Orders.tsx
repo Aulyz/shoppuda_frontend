@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import AuthRequiredAlert from '../components/AuthRequiredAlert'
 import { 
   ClockIcon, 
   TruckIcon, 
@@ -80,7 +81,7 @@ const formatPrice = (price: string | number | undefined | null): string => {
 function Orders() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { user } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set())
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(null)
@@ -112,6 +113,9 @@ function Orders() {
       }
       
       return ordersList
+    },
+    {
+      enabled: isAuthenticated, // 인증된 사용자일 때만 API 요청
     }
   )
 
@@ -234,6 +238,23 @@ function Orders() {
           >
             다시 시도
           </button>
+        </div>
+      </div>
+    )
+  }
+
+  // 인증되지 않은 사용자 처리
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">주문 내역</h1>
+          <AuthRequiredAlert
+            message="주문 내역을 확인하려면 먼저 로그인해주세요."
+            emoji="📦"
+            autoRedirect={true}
+            redirectDelay={3000}
+          />
         </div>
       </div>
     )

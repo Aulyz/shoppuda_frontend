@@ -105,8 +105,11 @@ function KakaoAuthHandler() {
           sessionStorage.removeItem('kakao_processed_codes');
           
           console.log('Login successful, redirecting...');
-          navigate('/');
-          window.history.replaceState({}, document.title, '/');
+          // redirect 파라미터 처리
+          const urlParams = new URLSearchParams(window.location.search);
+          const redirectUrl = urlParams.get('redirect') || '/';
+          navigate(redirectUrl);
+          window.history.replaceState({}, document.title, redirectUrl);
         } else {
           setError(data.error || '카카오 로그인에 실패했습니다.');
           setTimeout(() => {

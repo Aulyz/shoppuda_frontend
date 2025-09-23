@@ -4,11 +4,13 @@ import { useQuery, useMutation } from 'react-query'
 import { MapPinIcon, PhoneIcon, UserIcon, TicketIcon, TrashIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { api } from '../services/api'
+import { useAuthStore } from '../store/authStore'
 import DaumPostcode from '../components/DaumPostcode'
 
 function Checkout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { isAuthenticated } = useAuthStore()
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null)
   const [useNewAddress, setUseNewAddress] = useState(false)
   const [newAddress, setNewAddress] = useState({
@@ -50,8 +52,12 @@ function Checkout() {
     }
   )
 
-  // 내 쿠폰 조회
-  const { data: myCoupons } = useQuery('myCoupons', api.getMyCoupons)
+  // 내 쿠폰 조회 (인증된 사용자만)
+  const { data: myCoupons } = useQuery(
+    'myCoupons', 
+    api.getMyCoupons,
+    { enabled: isAuthenticated }
+  )
 
   const isLoading = isDirectPurchase ? addressesLoading : checkoutLoading
 
@@ -192,6 +198,17 @@ function Checkout() {
     setSelectedCoupon(null)
     setCouponDiscount(0)
     toast.success('쿠폰이 해제되었습니다')
+  }
+
+  // 쿠폰 선택 버튼 핸들러
+  const handleCouponButtonClick = () => {
+    if (!isAuthenticated) {
+      toast('쿠폰 혜택은 회원 전용입니다. 로그인 후 이용해주세요.', { icon: 'ℹ️' })
+      const currentPath = location.pathname + location.search
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`)
+      return
+    }
+    setShowCouponList(!showCouponList)
   }
 
   const handlePostcodeComplete = (data: { address: string; zonecode: string }) => {
@@ -556,7 +573,7 @@ function Checkout() {
                       할인쿠폰
                     </span>
                     <button
-                      onClick={() => setShowCouponList(!showCouponList)}
+                      onClick={handleCouponButtonClick}
                       className="text-sm text-orange-600 hover:text-pink-600 font-medium"
                     >
                       {selectedCoupon ? '변경' : '선택'}

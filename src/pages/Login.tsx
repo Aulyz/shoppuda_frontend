@@ -46,7 +46,7 @@ function Login() {
         login(response.access, response.refresh, response.user);
         
         const searchParams = new URLSearchParams(location.search);
-        const nextUrl = searchParams.get('next') || '/';
+        const nextUrl = searchParams.get('next') || searchParams.get('redirect') || '/';
         navigate(nextUrl);
       } else {
         setError(response.error || '카카오 로그인에 실패했습니다.');
@@ -80,7 +80,7 @@ function Login() {
         login(response.access, response.refresh, response.user);
         
         const searchParams = new URLSearchParams(location.search);
-        const nextUrl = searchParams.get('next') || '/';
+        const nextUrl = searchParams.get('next') || searchParams.get('redirect') || '/';
         navigate(nextUrl);
       } else {
         setError(response.error || '네이버 로그인에 실패했습니다.');
@@ -114,7 +114,7 @@ function Login() {
         login(response.access, response.refresh, response.user);
         
         const searchParams = new URLSearchParams(location.search);
-        const nextUrl = searchParams.get('next') || '/';
+        const nextUrl = searchParams.get('next') || searchParams.get('redirect') || '/';
         navigate(nextUrl);
       } else {
         setError(response.error || '구글 로그인에 실패했습니다.');
@@ -141,7 +141,7 @@ function Login() {
     };
 
     const searchParams = new URLSearchParams(location.search);
-    const nextUrl = searchParams.get('next') || '/';
+    const nextUrl = searchParams.get('next') || searchParams.get('redirect') || '/';
 
     try {
       const response = await api.login(loginData, nextUrl !== '/' ? nextUrl : undefined);
@@ -150,8 +150,8 @@ function Login() {
         // JWT 토큰과 사용자 정보 저장
         login(response.access, response.refresh, response.user);
         
-        // 리다이렉트
-        navigate(response.next_url || nextUrl);
+        // 리다이렉트 (프론트엔드에서 계산한 nextUrl 우선 사용)
+        navigate(nextUrl);
       } else {
         setError(response.message || '로그인에 실패했습니다.');
       }

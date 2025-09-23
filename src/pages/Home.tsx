@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import RecentlyViewed from "../components/RecentlyViewed";
 import OptimizedImage from "../components/OptimizedImage";
 import { api } from "../services/api";
@@ -112,6 +112,8 @@ const HeroSlider = () => {
    =============================== */
 const CouponSection = () => {
   const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate()
+  const location = useLocation()
   const { addToast } = useToastStore()
   const { isAuthenticated, user } = useAuthStore()
   const { ownedCouponCodes, fetchUserCoupons, claimCoupon, isInitialized } = useCouponStore()
@@ -130,8 +132,10 @@ const CouponSection = () => {
       addToast({
         type: 'warning',
         title: '로그인 필요',
-        message: '쿠폰을 받으려면 먼저 로그인해주세요.',
+        message: '쿠폰 혜택은 회원 전용입니다. 로그인 후 이용해주세요.',
       })
+      const currentPath = location.pathname + location.search
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`)
       return
     }
 
@@ -700,6 +704,33 @@ const NewItemsSection = () => {
    Sale Banner Section (새로 추가)
    =============================== */
 const SaleBannerSection = () => {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { isAuthenticated } = useAuthStore()
+  const { addToast } = useToastStore()
+
+  const handleCouponClick = () => {
+    if (!isAuthenticated) {
+      addToast({
+        type: 'warning',
+        title: '로그인 필요',
+        message: '쿠폰 혜택은 회원 전용입니다. 로그인 후 이용해주세요.',
+      })
+      const currentPath = location.pathname + location.search
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`)
+      return
+    }
+    
+    // 로그인된 사용자는 쿠폰 섹션으로 스크롤
+    const couponSection = document.getElementById('coupon-section');
+    if (couponSection) {
+      couponSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
+  }
+
   return (
     <section className="py-8 sm:py-10 md:py-12 bg-gradient-to-r from-orange-400 to-pink-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -717,7 +748,10 @@ const SaleBannerSection = () => {
             >
               세일 상품 보기
             </Link>
-            <button className="inline-flex items-center justify-center px-6 sm:px-8 py-3 bg-transparent border-2 border-white text-white rounded-full font-bold hover:bg-white/10 transition-colors duration-200">
+            <button 
+              onClick={handleCouponClick}
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 bg-transparent border-2 border-white text-white rounded-full font-bold hover:bg-white/10 transition-colors duration-200"
+            >
               쿠폰 받기
             </button>
           </div>

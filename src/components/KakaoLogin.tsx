@@ -21,8 +21,18 @@ const KakaoLogin: React.FC<KakaoLoginProps> = ({ onFailure }) => {
         throw new Error('Kakao Client ID is not configured');
       }
 
+      // 현재 URL에서 redirect 파라미터 추출
+      const currentUrl = new URL(window.location.href);
+      const redirectParam = currentUrl.searchParams.get('redirect') || currentUrl.searchParams.get('next');
+      
+      // 카카오 리다이렉트 URI에 redirect 파라미터 추가
+      let redirectUri = KAKAO_REDIRECT_URI;
+      if (redirectParam) {
+        redirectUri += `?redirect=${encodeURIComponent(redirectParam)}`;
+      }
+
       // 카카오 인증 URL 생성 
-      const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code`;
+      const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
 
       // 페이지 이동
       window.location.href = kakaoAuthUrl;

@@ -23,6 +23,7 @@ import {
 } from '@heroicons/react/24/outline';
 import CouponList from '../components/CouponList';
 import ErrorBoundary from '../components/ErrorBoundary';
+import AuthRequiredAlert from '../components/AuthRequiredAlert';
 
 declare global {
   interface Window {
@@ -118,7 +119,6 @@ const MyPage: React.FC = () => {
 
   useEffect(() => {
     if (!accessToken) {
-      navigate('/login');
       return;
     }
     fetchProfile();
@@ -290,6 +290,23 @@ const MyPage: React.FC = () => {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
     );
+  }
+
+  // 인증되지 않은 사용자 처리
+  if (!accessToken) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">마이페이지</h1>
+          <AuthRequiredAlert
+            message="마이페이지를 이용하려면 먼저 로그인해주세요."
+            emoji="👤"
+            autoRedirect={true}
+            redirectDelay={3000}
+          />
+        </div>
+      </div>
+    )
   }
 
   const menuItems = [

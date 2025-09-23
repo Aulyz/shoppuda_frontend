@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { api } from '../services/api'
 import { useToastStore } from '../store/toastStore'
+import { useAuthStore } from '../store/authStore'
+import { useNavigate } from 'react-router-dom'
+import AuthRequiredAlert from './AuthRequiredAlert'
 
 interface UserCoupon {
   id: number
@@ -37,6 +40,8 @@ const CouponCodeInput: React.FC<CouponCodeInputProps> = ({
   const [showAvailableCoupons, setShowAvailableCoupons] = useState(false)
   const [loadingAvailable, setLoadingAvailable] = useState(false)
   const { addToast } = useToastStore()
+  const { isAuthenticated } = useAuthStore()
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (showAvailableCoupons && availableCoupons.length === 0) {
@@ -45,6 +50,15 @@ const CouponCodeInput: React.FC<CouponCodeInputProps> = ({
   }, [showAvailableCoupons])
 
   const fetchAvailableCoupons = async () => {
+    if (!isAuthenticated) {
+      addToast({
+        type: 'warning',
+        message: '로그인 후 쿠폰을 확인할 수 있습니다.',
+      })
+      navigate('/login')
+      return
+    }
+
     try {
       setLoadingAvailable(true)
       const response = await api.getAvailableCoupons(orderAmount)
@@ -57,6 +71,15 @@ const CouponCodeInput: React.FC<CouponCodeInputProps> = ({
   }
 
   const applyCouponByCode = async () => {
+    if (!isAuthenticated) {
+      addToast({
+        type: 'warning',
+        message: '로그인 후 쿠폰을 사용할 수 있습니다.',
+      })
+      navigate('/login')
+      return
+    }
+
     if (!couponCode.trim()) {
       addToast({
         type: 'warning',
@@ -141,6 +164,15 @@ const CouponCodeInput: React.FC<CouponCodeInputProps> = ({
   }
 
   const applyCoupon = async (userCoupon: UserCoupon) => {
+    if (!isAuthenticated) {
+      addToast({
+        type: 'warning',
+        message: '로그인 후 쿠폰을 사용할 수 있습니다.',
+      })
+      navigate('/login')
+      return
+    }
+
     try {
       // 쿠폰 유효성 검증
       const validationResponse = await api.validateCoupon(userCoupon.id, orderAmount)
@@ -192,6 +224,22 @@ const CouponCodeInput: React.FC<CouponCodeInputProps> = ({
       default:
         return '할인'
     }
+  }
+
+  // 인증되지 않은 사용자 처리
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-white rounded-lg border p-4 space-y-4">
+        <h3 className="text-lg font-semibold">쿠폰 할인</h3>
+        <AuthRequiredAlert
+          message="쿠폰을 사용하려면 먼저 로그인해주세요."
+          emoji="🎫"
+          autoRedirect={true}
+          redirectDelay={3000}
+          showLoginButton={true}
+        />
+      </div>
+    )
   }
 
   return (

@@ -14,11 +14,21 @@ const NaverLogin: React.FC<NaverLoginProps> = ({ onFailure }) => {
         throw new Error('Naver Client ID is not configured');
       }
 
+      // 현재 URL에서 redirect 파라미터 추출
+      const currentUrl = new URL(window.location.href);
+      const redirectParam = currentUrl.searchParams.get('redirect') || currentUrl.searchParams.get('next');
+      
       // 네이버 로그인 state 생성 (CSRF 방지)
       const state = Math.random().toString(36).substring(2, 15);
       
+      // 네이버 리다이렉트 URI에 redirect 파라미터 추가
+      let redirectUri = 'http://192.168.0.5/naver/callback';
+      if (redirectParam) {
+        redirectUri += `?redirect=${encodeURIComponent(redirectParam)}`;
+      }
+      
       // 네이버 인증 URL 생성 (카카오와 동일한 패턴)
-      const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${NAVER_CLIENT_ID}&redirect_uri=${encodeURIComponent('http://192.168.0.5/naver/callback')}&state=${state}`;
+      const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${NAVER_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
 
       // 페이지 이동
       window.location.href = naverAuthUrl;

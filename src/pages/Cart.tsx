@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { TrashIcon, PlusIcon, MinusIcon, TicketIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { api } from '../services/api'
+import { useAuthStore } from '../store/authStore'
 
 function Cart() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const location = useLocation()
+  const { isAuthenticated } = useAuthStore()
   
   // 쿠폰 관련 상태
   const [selectedCoupon, setSelectedCoupon] = useState<any>(null)
@@ -19,11 +22,44 @@ function Cart() {
     window.scrollTo(0, 0)
   }, [])
   
-  // 장바구니 데이터 조회
-  const { data: cart, isLoading } = useQuery('cart', api.getCart)
+  // 비회원 장바구니 헬퍼 함수들
+  const getGuestCart = () => {
+    try {
+      const guestCart = localStorage.getItem('guestCart')
+      return guestCart ? JSON.parse(guestCart) : { items: [] }
+    } catch {
+      return { items: [] }
+    }
+  }
+
+  const saveGuestCart = (cartData: any) => {
+    try {
+      localStorage.setItem('guestCart', JSON.stringify(cartData))
+    } catch (error) {
+      console.error('Failed to save guest cart:', error)
+    }
+  }
+
+  // 장바구니 데이터 조회 (인증 상태에 따라 분기)
+  const { data: serverCart, isLoading: isServerCartLoading } = useQuery(
+    'cart', 
+    api.getCart,
+    { enabled: isAuthenticated }
+  )
+
+  // 비회원 장바구니 상태
+  const [guestCart, setGuestCart] = useState(getGuestCart())
+
+  // 최종 장바구니 데이터 (인증 상태에 따라 결정)
+  const cart = isAuthenticated ? serverCart : guestCart
+  const isLoading = isAuthenticated ? isServerCartLoading : false
   
-  // 내 쿠폰 조회
-  const { data: myCoupons } = useQuery('myCoupons', api.getMyCoupons)
+  // 내 쿠폰 조회 (인증된 사용자만)
+  const { data: myCoupons } = useQuery(
+    'myCoupons', 
+    api.getMyCoupons,
+    { enabled: isAuthenticated }
+  )
 
   // 총 상품 금액 계산
   const subtotal = cart?.items?.reduce(
@@ -146,6 +182,18 @@ function Cart() {
     setCouponDiscount(0)
     toast.success('쿠폰이 해제되었습니다')
   }
+
+  // 쿠폰 선택 버튼 핸들러
+  const handleCouponButtonClick = () => {
+    if (!isAuthenticated) {
+      toast('쿠폰 혜택은 회원 전용입니다. 로그인 후 이용해주세요.', { icon: 'ℹ️' })
+      const currentPath = location.pathname + location.search
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`)
+      return
+    }
+    setShowCouponList(!showCouponList)
+  }
+
 
   // 로딩 상태 렌더링
   if (isLoading) {
@@ -298,7 +346,7 @@ function Cart() {
                         할인쿠폰
                       </span>
                       <button
-                        onClick={() => setShowCouponList(!showCouponList)}
+                        onClick={handleCouponButtonClick}
                         className="text-sm text-orange-600 hover:text-pink-600 font-medium"
                       >
                         {selectedCoupon ? '변경' : '선택'}

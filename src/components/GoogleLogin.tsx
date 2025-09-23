@@ -14,11 +14,20 @@ const GoogleLogin: React.FC<GoogleLoginProps> = ({ onFailure }) => {
         throw new Error('Google Client ID is not configured');
       }
 
+      // 현재 URL에서 redirect 파라미터 추출
+      const currentUrl = new URL(window.location.href);
+      const redirectParam = currentUrl.searchParams.get('redirect') || currentUrl.searchParams.get('next');
+      
       // 구글 로그인 state 생성 (CSRF 방지)
       const state = Math.random().toString(36).substring(2, 15);
       
+      // 구글 리다이렉트 URI에 redirect 파라미터 추가
+      let redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI || 'http://localhost/google/callback';
+      if (redirectParam) {
+        redirectUri += `?redirect=${encodeURIComponent(redirectParam)}`;
+      }
+      
       // 구글 인증 URL 생성 (localhost 사용)
-      const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI || 'http://localhost/google/callback';
       const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&state=${state}`;
 
       // 페이지 이동

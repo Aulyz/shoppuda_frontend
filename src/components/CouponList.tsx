@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useToastStore } from '../store/toastStore'
 import { useCouponStore } from '../store/couponStore'
 import { useAuthStore } from '../store/authStore'
+import AuthRequiredAlert from './AuthRequiredAlert'
 
 interface Coupon {
   id: number
@@ -153,30 +154,26 @@ const CouponList: React.FC = () => {
   }
 
   if (error) {
+    if (error.includes('로그인')) {
+      return (
+        <AuthRequiredAlert
+          message="쿠폰을 받으려면 먼저 로그인해주세요."
+          autoRedirect={true}
+          redirectDelay={5000}
+        />
+      )
+    }
+
     return (
       <div className="text-center py-8">
-        <div className="text-4xl mb-4">
-          {error.includes('로그인') ? '🔐' : '❌'}
-        </div>
+        <div className="text-4xl mb-4">❌</div>
         <p className="text-red-600 mb-4">{error}</p>
-        {error.includes('로그인') ? (
-          <div className="space-y-2">
-            <p className="text-gray-600 text-sm">로그인 후 쿠폰을 확인할 수 있습니다.</p>
-            <button
-              onClick={() => window.location.href = '/login'}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              로그인하기
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={refreshCoupons}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            다시 시도
-          </button>
-        )}
+        <button
+          onClick={refreshCoupons}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          다시 시도
+        </button>
       </div>
     )
   }
