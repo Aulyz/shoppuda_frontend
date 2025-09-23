@@ -315,14 +315,15 @@ function ProductDetail() {
   
   // 바로 구매 핸들러
   const handleDirectPurchase = () => {
-    if (!isAuthenticated) {
-      toast.error('로그인이 필요합니다.')
-      navigate('/login')
+    if (!product) {
+      toast.error('상품 정보를 불러올 수 없습니다.')
       return
     }
     
-    if (!product) {
-      toast.error('상품 정보를 불러올 수 없습니다.')
+    if (!isAuthenticated) {
+      // 비인증 사용자는 로그인 페이지로 리다이렉트하되, redirect 파라미터에 /checkout을 포함
+      const currentPath = `/checkout?direct=true&productId=${product.id}&quantity=${quantity}`
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`)
       return
     }
     

@@ -86,6 +86,14 @@ function Checkout() {
   const discountedSubtotal = Math.max(0, subtotal - couponDiscount)
   const finalTotalAmount = discountedSubtotal + shippingFee
 
+  // 비회원 접근 시 로그인 페이지로 리디렉션
+  useEffect(() => {
+    if (!isAuthenticated) {
+      const currentPath = location.pathname + location.search
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`)
+    }
+  }, [isAuthenticated, navigate, location])
+
   // 장바구니 금액이 변경될 때 쿠폰 할인 금액 다시 계산
   useEffect(() => {
     if (selectedCoupon && subtotal > 0) {

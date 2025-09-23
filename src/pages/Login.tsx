@@ -320,6 +320,30 @@ function Login() {
               </div>
             </div>
             
+            {/* 비회원 주문 버튼 - redirect 파라미터가 /checkout일 때만 표시 */}
+            {(() => {
+              const searchParams = new URLSearchParams(location.search);
+              const redirectUrl = searchParams.get('redirect');
+              return redirectUrl && redirectUrl.includes('/checkout') && (
+                <div className="pt-4">
+                  <div className="relative mb-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-gray-500">또는</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/guest-checkout?redirect=${encodeURIComponent(redirectUrl)}`)}
+                    className="w-full py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-all duration-200"
+                  >
+                    비회원 주문하기
+                  </button>
+                </div>
+              );
+            })()}
+            
             <div className="text-center pt-4 mt-4 border-t border-gray-200">
               <span className="text-gray-600 text-sm">계정이 없으신가요? </span>
               <Link to="/signup" className="text-sm font-semibold text-orange-600 hover:text-pink-600 transition-colors">

@@ -361,6 +361,34 @@ export const api = {
     }
   },
 
+  // Guest Order APIs
+  createGuestOrder: (data: {
+    customer_name: string
+    customer_phone: string
+    customer_email: string
+    recipient_name: string
+    recipient_phone: string
+    postal_code: string
+    address: string
+    detail_address?: string
+    delivery_request?: string
+    payment_method: 'card' | 'bank'
+    payment_details?: any
+    cart_items: Array<{
+      product_id: number
+      quantity: number
+      price: number
+    }>
+  }) => axiosInstance.post(`/orders/guest/`, data).then((res) => res.data),
+
+  getBankInfo: () => axiosInstance.get(`/payment/bank-info/`).then((res) => res.data),
+
+  processGuestPayment: (data: {
+    order_id: string
+    payment_method: 'card' | 'bank'
+    payment_details: any
+  }) => axiosInstance.post(`/payment/guest/`, data).then((res) => res.data),
+
   // Instagram API (추후 구현 예정)
   // getInstagramFeed: () =>
   //   axiosInstance.get(`/instagram/feed/`).then((res) => res.data),

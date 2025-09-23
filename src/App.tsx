@@ -26,6 +26,7 @@ import LoginSuccess from './pages/LoginSuccess'
 import KakaoNameInput from './pages/KakaoNameInput'
 import NaverCallback from './pages/NaverCallback'
 import GoogleCallback from './pages/GoogleCallback'
+import GuestCheckout from './pages/GuestCheckout'
 import UserDebug from './components/UserDebug'
 import { RecentlyViewedFull } from './components/RecentlyViewed'
 import ToastContainer from './components/ToastContainer'
@@ -172,6 +173,7 @@ function App() {
             <Route path="/search" element={<SearchResults />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/guest-checkout" element={<GuestCheckout />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
