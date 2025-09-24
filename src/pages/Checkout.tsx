@@ -7,6 +7,28 @@ import { api } from '../services/api'
 import { useAuthStore } from '../store/authStore'
 import DaumPostcode from '../components/DaumPostcode'
 
+// 토스페이먼츠 타입 정의
+declare global {
+  interface Window {
+    TossPayments?: (clientKey: string) => {
+      requestPayment: (options: {
+        method: string
+        amount: {
+          currency: string
+          value: number
+        }
+        orderId: string
+        orderName: string
+        successUrl: string
+        failUrl: string
+        customerEmail?: string
+        customerName?: string
+        customerMobilePhone?: string
+      }) => Promise<void>
+    }
+  }
+}
+
 function Checkout() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -129,7 +151,94 @@ function Checkout() {
     }
   }, [displayData])
 
-  // 결제 처리
+  // 네이버페이 결제 뮤테이션
+  const naverPayMutation = useMutation(
+    (data: any) => {
+      const cartType = isDirectPurchase ? 'direct' : 'cart'
+      const requestData = {
+        cart_type: cartType,
+        shipping_address: data.shipping_address,
+        ...(isDirectPurchase && directProduct ? {
+          product_id: directProduct.id,
+          quantity: directProduct.quantity
+        } : {})
+      }
+      return api.createNaverPayReservation(requestData)
+    },
+    {
+      onSuccess: (response) => {
+        if (response.success && response.naverpay_url) {
+          // 네이버페이 결제창으로 리다이렉트
+          window.location.href = response.naverpay_url
+        } else {
+          toast.error('네이버페이 결제 준비 중 오류가 발생했습니다.')
+        }
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || '네이버페이 결제 준비 중 오류가 발생했습니다.')
+      }
+    }
+  )
+
+  // 토스페이먼츠 결제 뮤테이션
+  const tossMutation = useMutation(
+    (data: any) => {
+      const cartType = isDirectPurchase ? 'direct' : 'cart'
+      const requestData = {
+        cart_type: cartType,
+        shipping_address: data.shipping_address,
+        ...(isDirectPurchase && directProduct ? {
+          product_id: directProduct.id,
+          quantity: directProduct.quantity
+        } : {})
+      }
+      return api.createTossOrder(requestData)
+    },
+    {
+      onSuccess: (response) => {
+        if (response.success) {
+          // 토스페이먼츠 결제창 호출
+          handleTossPayment(response)
+        } else {
+          toast.error('토스페이먼츠 결제 준비 중 오류가 발생했습니다.')
+        }
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || '토스페이먼츠 결제 준비 중 오류가 발생했습니다.')
+      }
+    }
+  )
+
+  // 카카오페이 결제 뮤테이션
+  const kakaoPayMutation = useMutation(
+    (data: any) => {
+      const cartType = isDirectPurchase ? 'direct' : 'cart'
+      const requestData = {
+        cart_type: cartType,
+        shipping_address: data.shipping_address,
+        ...(isDirectPurchase && directProduct ? {
+          product_id: directProduct.id,
+          quantity: directProduct.quantity
+        } : {})
+      }
+      return api.createKakaoPayment(requestData)
+    },
+    {
+      onSuccess: (response) => {
+        if (response.success && response.payment_url) {
+          // 카카오페이 결제창으로 리다이렉트
+          window.location.href = response.payment_url
+        } else {
+          toast.error('카카오페이 결제 준비 중 오류가 발생했습니다.')
+        }
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || '카카오페이 결제 준비 중 오류가 발생했습니다.')
+      }
+    }
+  )
+
+  // 일반 결제 처리
   const checkoutMutation = useMutation(
     (data: any) => {
       if (isDirectPurchase && directProduct) {
@@ -228,9 +337,136 @@ function Checkout() {
     setShowPostcode(false)
   }
 
+  // 토스페이먼츠 결제창 호출
+  const handleTossPayment = async (orderData: any) => {
+    try {
+      // 토스페이먼츠 객체 확인
+      if (typeof window === 'undefined' || !window.TossPayments) {
+        toast.error('토스페이먼츠 SDK를 불러올 수 없습니다. 페이지를 새로고침해주세요.')
+        return
+      }
+
+      const clientKey = orderData.client_key
+      if (!clientKey) {
+        toast.error('토스페이먼츠 클라이언트 키가 설정되지 않았습니다.')
+        return
+      }
+
+      const tossPayments = window.TossPayments(clientKey)
+
+      // 사용자 정보 가져오기
+      const { user } = useAuthStore.getState()
+
+      // 필수 데이터 검증
+      if (!orderData.order_id || !orderData.total_amount) {
+        toast.error('주문 정보가 올바르지 않습니다.')
+        return
+      }
+
+      // 결제창 호출
+      await tossPayments.requestPayment({
+        method: 'CARD', // 카드 결제
+        amount: {
+          currency: 'KRW',
+          value: orderData.total_amount,
+        },
+        orderId: orderData.order_id,
+        orderName: orderData.order_name || '상품 주문',
+        successUrl: orderData.success_url,
+        failUrl: orderData.fail_url,
+        customerEmail: user?.email || '',
+        customerName: user?.username || '',
+        customerMobilePhone: displayData?.user_info?.phone || '',
+      })
+    } catch (error: any) {
+      console.error('토스페이먼츠 결제 오류:', error)
+
+      // 더 구체적인 오류 메시지 제공
+      if (error.code === 'USER_CANCEL') {
+        toast('결제가 취소되었습니다.', { icon: 'ℹ️' })
+      } else if (error.code === 'INVALID_CARD') {
+        toast.error('유효하지 않은 카드입니다. 다른 카드를 시도해주세요.')
+      } else if (error.code === 'INSUFFICIENT_FUNDS') {
+        toast.error('카드 한도가 부족합니다.')
+      } else if (error.code === 'CARD_COMPANY_ERROR') {
+        toast.error('카드사 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+      } else {
+        toast.error(error.message || '결제 처리 중 오류가 발생했습니다.')
+      }
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // 배송지 정보 검증
+    let shippingAddressData: any = {}
+
+    if (useNewAddress) {
+      // 새 주소 직접 입력
+      if (!newAddress.recipient_name || !newAddress.phone_number || !newAddress.address) {
+        toast.error('필수 배송 정보를 모두 입력해주세요.')
+        return
+      }
+
+      shippingAddressData = {
+        recipient_name: newAddress.recipient_name,
+        phone_number: newAddress.phone_number,
+        postal_code: newAddress.postal_code,
+        address: newAddress.address,
+        detail_address: newAddress.detail_address
+      }
+    } else {
+      // 기존 배송지 선택
+      if (!selectedAddressId) {
+        toast.error('배송지를 선택해주세요.')
+        return
+      }
+
+      // 선택된 배송지 정보 찾기
+      const selectedAddress = displayData.shipping_addresses?.find(
+        (addr: any) => addr.id === selectedAddressId
+      )
+
+      if (selectedAddress) {
+        shippingAddressData = {
+          recipient_name: selectedAddress.recipient_name,
+          phone_number: selectedAddress.phone_number,
+          postal_code: selectedAddress.postal_code,
+          address: selectedAddress.address,
+          detail_address: selectedAddress.detail_address
+        }
+      }
+    }
+
+    // 네이버페이 결제 처리
+    if (paymentMethod === 'naverpay') {
+      const naverPayData = {
+        shipping_address: shippingAddressData
+      }
+      naverPayMutation.mutate(naverPayData)
+      return
+    }
+
+    // 토스페이먼츠 결제 처리
+    if (paymentMethod === 'tosspayments') {
+      const tossData = {
+        shipping_address: shippingAddressData
+      }
+      tossMutation.mutate(tossData)
+      return
+    }
+
+    // 카카오페이 결제 처리
+    if (paymentMethod === 'kakao') {
+      const kakaoData = {
+        shipping_address: shippingAddressData
+      }
+      kakaoPayMutation.mutate(kakaoData)
+      return
+    }
+
+    // 일반 결제 처리
     let checkoutData: any = {
       payment_method: paymentMethod
     }
@@ -242,12 +478,6 @@ function Checkout() {
     }
 
     if (useNewAddress) {
-      // 새 주소 직접 입력
-      if (!newAddress.recipient_name || !newAddress.phone_number || !newAddress.address) {
-        toast.error('필수 배송 정보를 모두 입력해주세요.')
-        return
-      }
-      
       checkoutData = {
         ...checkoutData,
         use_new_address: true,
@@ -260,11 +490,6 @@ function Checkout() {
         address_nickname: newAddress.nickname
       }
     } else {
-      // 기존 배송지 선택
-      if (!selectedAddressId) {
-        toast.error('배송지를 선택해주세요.')
-        return
-      }
       checkoutData.shipping_address_id = selectedAddressId
     }
 
@@ -526,12 +751,41 @@ function Checkout() {
                 <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                   <input
                     type="radio"
+                    value="naverpay"
+                    checked={paymentMethod === 'naverpay'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="text-orange-600 focus:ring-orange-500"
+                  />
+                  <div className="flex items-center space-x-2">
+                    <span className="text-green-600 font-bold text-sm">N</span>
+                    <span>네이버페이</span>
+                  </div>
+                </label>
+                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    value="tosspayments"
+                    checked={paymentMethod === 'tosspayments'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="text-orange-600 focus:ring-orange-500"
+                  />
+                  <div className="flex items-center space-x-2">
+                    <span className="text-blue-600 font-bold text-sm">toss</span>
+                    <span>토스페이먼츠</span>
+                  </div>
+                </label>
+                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
                     value="kakao"
                     checked={paymentMethod === 'kakao'}
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="text-orange-600 focus:ring-orange-500"
                   />
-                  <span>카카오페이</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="bg-yellow-400 text-black px-2 py-1 rounded font-bold text-xs">Pay</span>
+                    <span>카카오페이</span>
+                  </div>
                 </label>
               </div>
             </div>
@@ -694,10 +948,32 @@ function Checkout() {
               {/* 결제 버튼 */}
               <button
                 onClick={handleSubmit}
-                disabled={checkoutMutation.isLoading}
-                className="w-full py-3 bg-gradient-to-r from-orange-400 to-pink-400 text-white rounded-lg font-semibold hover:from-orange-500 hover:to-pink-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={checkoutMutation.isLoading || naverPayMutation.isLoading || tossMutation.isLoading || kakaoPayMutation.isLoading}
+                className={`w-full py-3 text-white rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  paymentMethod === 'naverpay'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : paymentMethod === 'tosspayments'
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : paymentMethod === 'kakao'
+                    ? 'bg-yellow-400 hover:bg-yellow-500 text-gray-900'
+                    : 'bg-gradient-to-r from-orange-400 to-pink-400 hover:from-orange-500 hover:to-pink-500'
+                }`}
               >
-                {checkoutMutation.isLoading ? '처리 중...' : `₩${finalTotalAmount.toLocaleString()} 결제하기`}
+                {checkoutMutation.isLoading || naverPayMutation.isLoading || tossMutation.isLoading || kakaoPayMutation.isLoading
+                  ? (paymentMethod === 'naverpay'
+                      ? '네이버페이 준비 중...'
+                      : paymentMethod === 'tosspayments'
+                      ? '토스페이먼츠 준비 중...'
+                      : paymentMethod === 'kakao'
+                      ? '카카오페이 준비 중...'
+                      : '처리 중...')
+                  : (paymentMethod === 'naverpay'
+                      ? `네이버페이로 ₩${finalTotalAmount.toLocaleString()} 결제하기`
+                      : paymentMethod === 'tosspayments'
+                      ? `토스페이먼츠로 ₩${finalTotalAmount.toLocaleString()} 결제하기`
+                      : paymentMethod === 'kakao'
+                      ? `카카오페이로 ₩${finalTotalAmount.toLocaleString()} 결제하기`
+                      : `₩${finalTotalAmount.toLocaleString()} 결제하기`)}
               </button>
 
               <p className="text-xs text-gray-500 text-center mt-3">

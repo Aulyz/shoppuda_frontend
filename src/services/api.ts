@@ -389,6 +389,39 @@ export const api = {
     payment_details: any
   }) => axiosInstance.post(`/payment/guest/`, data).then((res) => res.data),
 
+  // 네이버페이 APIs
+  createNaverPayReservation: (data: {
+    cart_type: 'cart' | 'direct'
+    product_id?: number
+    quantity?: number
+    shipping_address?: any
+  }) => axiosInstance.post(`/naverpay/reserve/`, data).then((res) => res.data),
+
+  cancelNaverPayOrder: (orderId: number, reason?: string) =>
+    axiosInstance.post(`/naverpay/orders/${orderId}/cancel/`, { reason }).then((res) => res.data),
+
+  // 토스페이먼츠 APIs
+  createTossOrder: (data: {
+    cart_type: 'cart' | 'direct'
+    product_id?: number
+    quantity?: number
+    shipping_address?: any
+  }) => axiosInstance.post(`/tosspayments/order/`, data).then((res) => res.data),
+
+  cancelTossOrder: (orderId: number, reason?: string) =>
+    axiosInstance.post(`/tosspayments/orders/${orderId}/cancel/`, { reason }).then((res) => res.data),
+
+  // 카카오페이 APIs
+  createKakaoPayment: (data: {
+    cart_type: 'cart' | 'direct'
+    product_id?: number
+    quantity?: number
+    shipping_address?: any
+  }) => axiosInstance.post(`/kakaopay/payment/`, data).then((res) => res.data),
+
+  cancelKakaoPayOrder: (orderId: number, reason?: string) =>
+    axiosInstance.post(`/kakaopay/orders/${orderId}/cancel/`, { reason }).then((res) => res.data),
+
   // Instagram API (추후 구현 예정)
   // getInstagramFeed: () =>
   //   axiosInstance.get(`/instagram/feed/`).then((res) => res.data),
