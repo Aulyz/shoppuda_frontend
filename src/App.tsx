@@ -31,6 +31,17 @@ import UserDebug from './components/UserDebug'
 import { RecentlyViewedFull } from './components/RecentlyViewed'
 import ToastContainer from './components/ToastContainer'
 
+// 인증 상태 초기화 컴포넌트
+function AuthInitializer() {
+  const { isAuthenticated, user } = useAuthStore()
+
+  useEffect(() => {
+    console.log('앱 시작 시 인증 상태:', { isAuthenticated, user })
+  }, [isAuthenticated, user])
+
+  return null
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -78,14 +89,15 @@ function KakaoAuthHandler() {
 
       try {
         console.log('Sending code to backend...');
-        const response = await fetch(`http://localhost:8000/api/kakao/login/`, {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"
+        const response = await fetch(`${API_BASE_URL}/kakao/login/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             code: code,
-            redirect_uri: import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://192.168.0.5/kakao/callback'
+            redirect_uri: import.meta.env.VITE_KAKAO_REDIRECT_URI || `${window.location.origin}/kakao/callback`
           }),
         });
 
@@ -94,18 +106,38 @@ function KakaoAuthHandler() {
 
         if (response.ok && data.success) {
           // 로그인 성공
+          console.log('카카오 로그인 성공 데이터:', data);
+
           const { login } = useAuthStore.getState();
-          login(data.access, data.refresh, data.user);
-          
+
+          // 사용자 정보가 있는지 확인하고 로그인 처리
+          if (data.user) {
+            // JWT 토큰과 함께 사용자 정보 저장
+            login(data.access, data.refresh, {
+              ...data.user,
+              loginType: 'kakao'
+            });
+          } else {
+            // 사용자 정보가 없는 경우 토큰만으로 저장
+            login(data.access, data.refresh);
+          }
+
           // 카카오 액세스 토큰도 저장
           if (data.kakao_access_token) {
             localStorage.setItem('kakao_access_token', data.kakao_access_token);
           }
-          
+
           // 처리된 코드 목록 클리어
           sessionStorage.removeItem('kakao_processed_codes');
-          
-          console.log('Login successful, redirecting...');
+
+          console.log('카카오 로그인 성공, 리디렉션 중...');
+
+          // 잠시 기다린 후 상태 확인
+          setTimeout(() => {
+            const currentState = useAuthStore.getState();
+            console.log('로그인 후 상태:', currentState);
+          }, 100);
+
           // redirect 파라미터 처리
           const urlParams = new URLSearchParams(window.location.search);
           const redirectUrl = urlParams.get('redirect') || '/';
@@ -159,6 +191,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <AuthInitializer />
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />

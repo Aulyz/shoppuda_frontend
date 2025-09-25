@@ -134,9 +134,21 @@ function Login() {
     e.preventDefault();
     setError('');
 
+    console.log('로그인 시도:', { username, password: '***', rememberMe });
+
+    // 기본 유효성 검사
+    if (!username.trim()) {
+      setError('아이디를 입력해주세요.');
+      return;
+    }
+    if (!password.trim()) {
+      setError('비밀번호를 입력해주세요.');
+      return;
+    }
+
     const loginData = {
-      username,
-      password,
+      username: username.trim(),
+      password: password.trim(),
       remember_me: rememberMe,
     };
 
@@ -144,24 +156,34 @@ function Login() {
     const nextUrl = searchParams.get('next') || searchParams.get('redirect') || '/';
 
     try {
+      console.log('API 로그인 요청 중...');
       const response = await api.login(loginData, nextUrl !== '/' ? nextUrl : undefined);
+      console.log('로그인 응답:', response);
 
-      if (response.status === 'OK') {
+      if (response.status === 'OK' || response.success) {
         // JWT 토큰과 사용자 정보 저장
         login(response.access, response.refresh, response.user);
-        
+
+        console.log('로그인 성공, 리디렉션:', nextUrl);
         // 리다이렉트 (프론트엔드에서 계산한 nextUrl 우선 사용)
         navigate(nextUrl);
       } else {
-        setError(response.message || '로그인에 실패했습니다.');
+        console.log('로그인 실패:', response);
+        setError(response.message || response.error || '로그인에 실패했습니다.');
       }
     } catch (err: any) {
       console.error("Login failed:", err);
-      
+
       if (err?.response?.data?.message) {
         setError(err.response.data.message);
+      } else if (err?.response?.data?.error) {
+        setError(err.response.data.error);
       } else if (err?.response?.status === 405) {
         setError('잘못된 요청 방식입니다.');
+      } else if (err?.response?.status === 401) {
+        setError('아이디 또는 비밀번호가 올바르지 않습니다.');
+      } else if (err?.response?.status === 400) {
+        setError('입력 정보를 다시 확인해주세요.');
       } else {
         setError('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
       }

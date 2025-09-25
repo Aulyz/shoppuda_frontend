@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useToastStore } from '../store/toastStore'
 import { useAuthStore } from '../store/authStore'
 import { useCouponStore } from '../store/couponStore'
@@ -28,6 +29,8 @@ function setHiddenForOneDay() {
 const BannerNotification = () => {
   const [isHidden, setIsHidden] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate()
+  const location = useLocation()
   const { addToast } = useToastStore()
   const { isAuthenticated, user } = useAuthStore()
   const { ownedCouponCodes, fetchUserCoupons, claimCoupon, isInitialized } = useCouponStore()
@@ -51,13 +54,19 @@ const BannerNotification = () => {
 
   const handleClaimCoupon = async (e: React.MouseEvent, couponCode: string) => {
     e.preventDefault()
-    
-    if (!isAuthenticated) {
+
+    console.log('배너 쿠폰 클레임 시도:', { isAuthenticated, user, couponCode })
+
+    // 로그인 상태를 더 엄격하게 체크
+    if (!isAuthenticated || !user) {
+      console.log('비로그인 상태 감지 - 로그인 페이지로 리디렉션')
       addToast({
         type: 'warning',
         title: '로그인 필요',
-        message: '쿠폰을 받으려면 먼저 로그인해주세요.',
+        message: '쿠폰 혜택은 회원 전용입니다. 로그인 후 이용해주세요.',
       })
+      const currentPath = location.pathname + location.search
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`)
       return
     }
 
@@ -155,14 +164,20 @@ const BannerNotification = () => {
             return (
               <button
                 key={coupon.code}
-                onClick={(e) => !isOwned ? handleClaimCoupon(e, coupon.code) : undefined}
-                disabled={isLoading || isOwned}
-                className={`bg-white rounded-lg shadow-sm border px-3 py-2 
-                  text-xs sm:text-sm transition-all duration-200
-                  ${isOwned 
-                    ? 'border-gray-300 bg-gray-50 cursor-default opacity-75' 
-                    : isLoading 
-                      ? 'border-orange-200 opacity-60 cursor-not-allowed' 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  if (!isOwned) {
+                    handleClaimCoupon(e, coupon.code)
+                  }
+                }}
+                disabled={isLoading}
+                className={`bg-white rounded-lg shadow-sm border px-3 py-2
+                  text-xs sm:text-sm transition-all duration-200 min-h-[44px] flex items-center
+                  ${isOwned
+                    ? 'border-gray-300 bg-gray-50 cursor-default opacity-75'
+                    : isLoading
+                      ? 'border-orange-200 opacity-60 cursor-not-allowed'
                       : 'border-orange-200 cursor-pointer hover:shadow-md hover:scale-105 hover:bg-orange-50'
                   }`}
               >

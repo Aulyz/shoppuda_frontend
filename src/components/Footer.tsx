@@ -8,6 +8,8 @@ interface SiteSettings {
   site_logo: string | null;
   contact_email: string;
   contact_phone: string;
+  order_phone: string;
+  main_phone: string;
   business_hours: string;
   
   // 사업자 정보
@@ -50,7 +52,7 @@ const Footer = () => {
     const fetchSettings = async () => {
       try {
         // site_settings API 직접 호출
-        const response = await axios.get('http://localhost:8000/api/site/settings/');
+        const response = await axios.get('/api/site/settings/');
         setSettings(response.data);
       } catch (error) {
         console.error('Failed to fetch site settings:', error);
@@ -61,6 +63,8 @@ const Footer = () => {
           site_logo: null,
           contact_email: 'seri00413@naver.com',
           contact_phone: '010-2474-0413',
+          order_phone: '010-2474-0413',
+          main_phone: '02-1234-5678',
           business_hours: '09:00 ~ 21:00',
           company_name: 'ShopPuda',
           ceo_name: '박수빈',
@@ -130,7 +134,7 @@ const Footer = () => {
                 <p><span className="font-bold">상호명</span> {settings?.company_name || settings?.site_name || 'ShopPuda'}</p>
                 <p><span className="font-bold">대표자명</span> {settings?.ceo_name || '박수빈'}</p>
                 <p><span className="font-bold">사업장 주소</span> {settings?.business_address || '서울특별시 강남구'}</p>
-                <p><span className="font-bold">대표 전화</span> {settings?.contact_phone || '010-2474-0413'}</p>
+                <p><span className="font-bold">대표 전화</span> {settings?.main_phone || settings?.contact_phone || '010-2474-0413'}</p>
                 <p><span className="font-bold">사업자 등록번호</span> {settings?.business_registration_number || '123-45-67890'}</p>
                 <p><span className="font-bold">통신판매업 신고번호</span> {settings?.online_business_number || '제2024-서울강남-0001호'}</p>
                 <p><span className="font-bold">개인정보보호책임자</span> {settings?.privacy_officer || '박수빈'}</p>

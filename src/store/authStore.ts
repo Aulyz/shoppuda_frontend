@@ -32,6 +32,8 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: (accessToken, refreshToken, user) => {
+        console.log('AuthStore login 호출:', { accessToken: !!accessToken, refreshToken: !!refreshToken, user });
+
         if (accessToken && refreshToken) {
           try {
             const decoded: any = jwtDecode(accessToken)
@@ -44,34 +46,40 @@ export const useAuthStore = create<AuthState>()(
               loginType: user?.loginType || decoded.loginType || "normal",
             }
 
+            console.log('JWT 토큰 디코딩 성공, 사용자 데이터:', userData);
+
             set({
               accessToken,
               refreshToken,
               user: userData,
               isAuthenticated: true,
-            })
+            });
           } catch (error) {
-            // Silently handle token decode errors
+            console.error('JWT 토큰 디코딩 실패:', error);
             // 토큰 디코딩 실패시에도 user 정보가 있으면 사용
             if (user) {
+              console.log('사용자 정보로 로그인:', user);
               set({
                 accessToken,
                 refreshToken,
                 user,
                 isAuthenticated: true,
-              })
-              console.log("Login with user data:", user);
+              });
+            } else {
+              console.error('토큰 디코딩 실패 및 사용자 정보 없음');
             }
           }
         } else if (user) {
           // 토큰 기반이 아닌 경우 (카카오 로그인 등)
+          console.log('토큰 없이 사용자 정보로만 로그인:', user);
           set({
-            accessToken: null,
-            refreshToken: null,
+            accessToken,
+            refreshToken,
             user,
             isAuthenticated: true,
-          })
-          console.log("Login without token, user data:", user);
+          });
+        } else {
+          console.error('로그인 실패: 토큰과 사용자 정보가 모두 없음');
         }
       },
 

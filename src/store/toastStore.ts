@@ -7,6 +7,7 @@ export interface Toast {
   message: string
   duration?: number
   autoClose?: boolean
+  timeoutId?: NodeJS.Timeout
 }
 
 interface ToastStore {
@@ -32,21 +33,43 @@ export const useToastStore = create<ToastStore>((set, get) => ({
       toasts: [...state.toasts, newToast],
     }))
 
-    // 자동 제거
+    // 자동 제거 - 메모리 누수 방지를 위한 cleanup
     if (newToast.autoClose) {
-      setTimeout(() => {
-        get().removeToast(id)
+      const timeoutId = setTimeout(() => {
+        const currentToasts = get().toasts
+        if (currentToasts.find(t => t.id === id)) {
+          get().removeToast(id)
+        }
       }, newToast.duration)
+
+      // 컴포넌트 언마운트 시 cleanup을 위해 timeout ID 저장
+      newToast.timeoutId = timeoutId
     }
   },
 
   removeToast: (id) => {
-    set((state) => ({
-      toasts: state.toasts.filter((toast) => toast.id !== id),
-    }))
+    set((state) => {
+      // 제거할 토스트의 타이머가 있다면 정리
+      const toastToRemove = state.toasts.find(toast => toast.id === id)
+      if (toastToRemove?.timeoutId) {
+        clearTimeout(toastToRemove.timeoutId)
+      }
+
+      return {
+        toasts: state.toasts.filter((toast) => toast.id !== id),
+      }
+    })
   },
 
   clearToasts: () => {
-    set({ toasts: [] })
+    set((state) => {
+      // 모든 타이머 정리
+      state.toasts.forEach(toast => {
+        if (toast.timeoutId) {
+          clearTimeout(toast.timeoutId)
+        }
+      })
+      return { toasts: [] }
+    })
   },
 }))

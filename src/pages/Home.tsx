@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import RecentlyViewed from "../components/RecentlyViewed";
 import OptimizedImage from "../components/OptimizedImage";
@@ -110,8 +110,10 @@ const HeroSlider = () => {
 /* ===============================
    Coupon Section (개선된 반응형 카드)
    =============================== */
-const CouponSection = () => {
+const CouponSection: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
+  const [promotionalCoupons, setPromotionalCoupons] = useState<any[]>([])
+  const [couponsLoading, setCouponsLoading] = useState(true)
   const navigate = useNavigate()
   const location = useLocation()
   const { addToast } = useToastStore()
@@ -125,7 +127,37 @@ const CouponSection = () => {
     }
   }, [isAuthenticated, isInitialized, fetchUserCoupons])
 
-  const handleClaimCoupon = async (e: React.MouseEvent, couponCode: string, couponName: string) => {
+  // 기본 프로모션 쿠폰 설정
+  useEffect(() => {
+    setCouponsLoading(true)
+    // 기본 쿠폰 데이터 설정
+    setPromotionalCoupons([
+      {
+        code: 'WELCOME10',
+        name: '신규 회원 1000원 할인 쿠폰',
+        discount_value: 1000,
+        discount_type: 'FIXED',
+        description: 'VIP 신규고객 할인쿠폰'
+      },
+      {
+        code: 'FIRSTBUY15',
+        name: '첫 구매 3000원 할인 쿠폰',
+        discount_value: 3000,
+        discount_type: 'FIXED',
+        description: '첫 구매 특별 할인쿠폰'
+      },
+      {
+        code: 'FREESHIP',
+        name: '5000원 할인 쿠폰',
+        discount_value: 5000,
+        discount_type: 'FIXED',
+        description: '특별 할인 혜택쿠폰'
+      }
+    ])
+    setCouponsLoading(false)
+  }, [])
+
+  const handleClaimCoupon = useCallback(async (e: React.MouseEvent, couponCode: string, couponName: string) => {
     e.preventDefault()
 
     console.log('쿠폰 클레임 시도:', { isAuthenticated, user, couponCode })
@@ -173,10 +205,10 @@ const CouponSection = () => {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [isAuthenticated, user, navigate, location, addToast, claimCoupon, isLoading])
 
   // 사용자명 표시 함수
-  const getDisplayName = () => {
+  const getDisplayName = useCallback(() => {
     if (isAuthenticated && user) {
       // 우선순위: first_name > last_name > username
       if (user.first_name) {
@@ -190,31 +222,33 @@ const CouponSection = () => {
       }
     }
     return '고객'
-  }
+  }, [isAuthenticated, user])
 
-  const coupons = [
-    {
-      code: 'WELCOME10',
-      name: '신규 회원 1000원 할인 쿠폰',
-      value: '1,000',
-      unit: '원',
-      description: 'VIP 신규고객 할인쿠폰'
-    },
-    {
-      code: 'FIRSTBUY15',
-      name: '첫 구매 3000원 할인 쿠폰',
-      value: '3,000',
-      unit: '원',
-      description: '첫 구매 특별 할인쿠폰'
-    },
-    {
-      code: 'FREESHIP',
-      name: '5000원 할인 쿠폰',
-      value: '5,000',
-      unit: '원',
-      description: '특별 할인 혜택쿠폰'
+  // 동적 쿠폰 값 및 단위 계산 함수
+  const getCouponDisplayInfo = useCallback((coupon: any) => {
+    switch (coupon.discount_type) {
+      case 'FIXED':
+        return {
+          value: Number(coupon.discount_value).toLocaleString(),
+          unit: '원'
+        }
+      case 'PERCENTAGE':
+        return {
+          value: coupon.discount_value.toString(),
+          unit: '%'
+        }
+      case 'FREE_SHIPPING':
+        return {
+          value: '무료',
+          unit: '배송'
+        }
+      default:
+        return {
+          value: coupon.discount_value?.toString() || '0',
+          unit: '원'
+        }
     }
-  ];
+  }, [])
 
   return (
     <section id="coupon-section" className="w-full py-8 sm:py-10 md:py-12 lg:py-14">
@@ -222,44 +256,63 @@ const CouponSection = () => {
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-700 text-center mb-6 sm:mb-8">
           {getDisplayName()} 님을 위한 혜택
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-          {coupons.map((coupon) => {
-            const isOwned = ownedCouponCodes.includes(coupon.code)
-            
-            return (
-              <div
-                key={coupon.code}
-                className={`bg-white rounded-2xl shadow-lg transition-shadow duration-300 overflow-hidden ${
-                  isOwned ? 'opacity-75' : 'hover:shadow-xl'
-                }`}
-              >
+        {couponsLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
                 <div className="flex">
                   <div className="flex-1 px-5 py-5 sm:px-6 sm:py-6">
-                    <span className={`text-xs sm:text-sm font-bold ${
-                      isOwned ? 'text-gray-500' : 'text-orange-600'
-                    }`}>
-                      샵푸다
-                    </span>
-                    <div className="mt-2">
-                      <span className={`text-2xl sm:text-3xl font-extrabold ${
-                        isOwned ? 'text-gray-600' : 'text-gray-900'
+                    <div className="h-4 bg-gray-200 rounded w-16 mb-2"></div>
+                    <div className="h-8 bg-gray-200 rounded w-24 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-32"></div>
+                  </div>
+                  <div className="w-32 sm:w-36 flex items-center justify-center">
+                    <div className="w-20 h-16 bg-gray-200 rounded-xl"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+            {promotionalCoupons.map((coupon) => {
+              const isOwned = ownedCouponCodes.includes(coupon.code)
+              const displayInfo = getCouponDisplayInfo(coupon)
+
+              return (
+                <div
+                  key={coupon.code}
+                  className={`bg-white rounded-2xl shadow-lg transition-shadow duration-300 overflow-hidden ${
+                    isOwned ? 'opacity-75' : 'hover:shadow-xl'
+                  }`}
+                >
+                  <div className="flex">
+                    <div className="flex-1 px-5 py-5 sm:px-6 sm:py-6">
+                      <span className={`text-xs sm:text-sm font-bold ${
+                        isOwned ? 'text-gray-500' : 'text-orange-600'
                       }`}>
-                        {coupon.value}
+                        샵푸다
                       </span>
-                      <span className={`ml-1 text-sm sm:text-base ${
-                        isOwned ? 'text-gray-500' : 'text-gray-700'
+                      <div className="mt-2">
+                        <span className={`text-2xl sm:text-3xl font-extrabold ${
+                          isOwned ? 'text-gray-600' : 'text-gray-900'
+                        }`}>
+                          {displayInfo.value}
+                        </span>
+                        <span className={`ml-1 text-sm sm:text-base ${
+                          isOwned ? 'text-gray-500' : 'text-gray-700'
+                        }`}>
+                          {displayInfo.unit}
+                        </span>
+                      </div>
+                      <span className={`block mt-2 text-xs sm:text-sm ${
+                        isOwned ? 'text-gray-400' : 'text-gray-500'
                       }`}>
-                        {coupon.unit}
+                        {coupon.description}
                       </span>
                     </div>
-                    <span className={`block mt-2 text-xs sm:text-sm ${
-                      isOwned ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      {coupon.description}
-                    </span>
-                  </div>
-                  <div className={`my-4 w-px ${isOwned ? 'bg-gray-300' : 'bg-gray-200'}`} />
-                  <div className="w-32 sm:w-36 flex items-center justify-center">
+                    <div className={`my-4 w-px ${isOwned ? 'bg-gray-300' : 'bg-gray-200'}`} />
+                    <div className="w-32 sm:w-36 flex items-center justify-center">
                     <button
                       onClick={(e) => {
                         e.preventDefault()
@@ -269,7 +322,7 @@ const CouponSection = () => {
                         }
                       }}
                       disabled={isLoading}
-                      className={`inline-flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 text-xs sm:text-sm font-semibold transition-colors duration-200 ${
+                      className={`inline-flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 text-xs sm:text-sm font-semibold transition-colors duration-200 min-w-[44px] min-h-[44px] ${
                         isOwned
                           ? 'border-gray-400 text-gray-500 cursor-default bg-gray-50'
                           : isLoading
@@ -323,12 +376,13 @@ const CouponSection = () => {
                         </>
                       )}
                     </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -413,8 +467,7 @@ const ProductCard = ({ p }: { p: Product }) => {
       images: p.images,
       price: typeof p.price === 'string' ? parseFloat(p.price) : p.price,
       sale_price: typeof p.sale_price === 'string' ? parseFloat(p.sale_price) : p.sale_price,
-      regular_price: typeof p.regular_price === 'string' ? parseFloat(p.regular_price) : p.regular_price,
-      discount_price: typeof p.discount_price === 'string' ? parseFloat(p.discount_price) : p.discount_price
+      regular_price: typeof p.regular_price === 'string' ? parseFloat(p.regular_price) : p.regular_price
     })
   }
 

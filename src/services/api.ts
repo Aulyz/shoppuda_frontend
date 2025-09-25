@@ -2,7 +2,7 @@ import axios from "axios"
 import { useAuthStore } from "../store/authStore"
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"
+  import.meta.env.VITE_API_BASE_URL || "/api"
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -10,32 +10,23 @@ const axiosInstance = axios.create({
   withCredentials: true,
 })
 
-// Request interceptor: JWT(또는 Kakao) 붙이기
+// Request interceptor: JWT 토큰 추가
 axiosInstance.interceptors.request.use(
   (config) => {
-    const { accessToken, user } = useAuthStore.getState()
+    // localStorage에서 직접 토큰 가져오기 (store 순환 참조 방지)
+    try {
+      const authStorage = localStorage.getItem('auth-storage')
+      if (authStorage) {
+        const authData = JSON.parse(authStorage)
+        const accessToken = authData.state?.accessToken
+        if (accessToken) {
+          config.headers.Authorization = `Bearer ${accessToken}`
+        }
+      }
+    } catch (error) {
+      console.error('Auth token parsing error:', error)
+    }
 
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`
-    }
-    if (user?.loginType === "kakao") {
-      const kakaoToken = localStorage.getItem("kakao_access_token")
-      if (kakaoToken) {
-        config.headers["X-Kakao-Token"] = kakaoToken
-      }
-    }
-    if (user?.loginType === "naver") {
-      const naverToken = localStorage.getItem("naver_access_token")
-      if (naverToken) {
-        config.headers["X-Naver-Token"] = naverToken
-      }
-    }
-    if (user?.loginType === "google") {
-      const googleToken = localStorage.getItem("google_access_token")
-      if (googleToken) {
-        config.headers["X-Google-Token"] = googleToken
-      }
-    }
     return config
   },
   (error) => Promise.reject(error)
@@ -69,8 +60,21 @@ axiosInstance.interceptors.response.use(
 
     // 401 에러이고 JWT 토큰이 있는 경우에만 리프레시 시도
     if (error.response?.status === 401 && !originalRequest._retry) {
-      const { refreshToken, accessToken } = useAuthStore.getState()
-      
+      // localStorage에서 직접 토큰 가져오기 (순환 참조 방지)
+      let refreshToken = null
+      let accessToken = null
+
+      try {
+        const authStorage = localStorage.getItem('auth-storage')
+        if (authStorage) {
+          const authData = JSON.parse(authStorage)
+          refreshToken = authData.state?.refreshToken
+          accessToken = authData.state?.accessToken
+        }
+      } catch (error) {
+        console.error('Auth token parsing error in interceptor:', error)
+      }
+
       // JWT 토큰이 있는 경우에만 리프레시 시도
       if (refreshToken && accessToken) {
         if (isRefreshing) {
@@ -93,20 +97,32 @@ axiosInstance.interceptors.response.use(
             refresh: refreshToken,
           })
           const { access, refresh } = res.data
-          
-          const { updateTokens } = useAuthStore.getState()
-          updateTokens(access, refresh || refreshToken)
-          
+
+          // localStorage 직접 업데이트 (순환 참조 방지)
+          try {
+            const authStorage = localStorage.getItem('auth-storage')
+            if (authStorage) {
+              const authData = JSON.parse(authStorage)
+              authData.state.accessToken = access
+              authData.state.refreshToken = refresh || refreshToken
+              localStorage.setItem('auth-storage', JSON.stringify(authData))
+            }
+          } catch (error) {
+            console.error('Token update error:', error)
+          }
+
           processQueue(null, access)
-          
+
           originalRequest.headers.Authorization = `Bearer ${access}`
           return axiosInstance(originalRequest)
-          
+
         } catch (refreshError) {
           processQueue(refreshError, null)
-          
-          // 리프레시 실패 시 로그아웃
-          useAuthStore.getState().logout()
+
+          // 리프레시 실패 시 로그아웃 - localStorage 직접 조작
+          localStorage.removeItem('auth-storage')
+          localStorage.removeItem('kakao_access_token')
+          localStorage.removeItem('kakao_refresh_token')
           window.location.href = "/login"
           return Promise.reject(refreshError)
         } finally {
@@ -250,19 +266,19 @@ export const api = {
 
   // 비밀번호 재설정 요청 (인증 코드 발송)
   resetPassword: (data: { email: string }) =>
-    axios.post(`http://localhost:8000/accounts/api/password-reset/`, data).then((res) => res.data),
-  
+    axiosInstance.post(`/accounts/api/password-reset/`, data).then((res) => res.data),
+
   // 인증 코드 확인
   verifyResetCode: (data: { email: string; code: string }) =>
-    axios.post(`http://localhost:8000/accounts/api/password-reset/verify/`, data).then((res) => res.data),
-  
+    axiosInstance.post(`/accounts/api/password-reset/verify/`, data).then((res) => res.data),
+
   // 비밀번호 재설정 확인 (새 비밀번호 설정)
   resetPasswordConfirm: (data: { uid: string; token: string; new_password: string; confirm_password: string }) =>
-    axios.post(`http://localhost:8000/accounts/api/password-reset/confirm/`, data).then((res) => res.data),
-  
+    axiosInstance.post(`/accounts/api/password-reset/confirm/`, data).then((res) => res.data),
+
   // 인증 코드 재발송
   resendVerificationCode: (data: { email: string }) =>
-    axios.post(`http://localhost:8000/accounts/api/password-reset/resend/`, data).then((res) => res.data),
+    axiosInstance.post(`/accounts/api/password-reset/resend/`, data).then((res) => res.data),
 
   // Search APIs
   searchProducts: (query: string, params?: any) =>
@@ -310,6 +326,7 @@ export const api = {
   getMyCoupons: () =>
     axiosInstance.get(`/coupons/api/my/`).then((res) => res.data),
 
+
   getCsrfToken: () =>
     axiosInstance.get(`/coupons/api/csrf-token/`).then((res) => res.data),
 
@@ -318,15 +335,23 @@ export const api = {
     try {
       const csrfResponse = await axiosInstance.get(`/coupons/api/csrf-token/`)
       const csrfToken = csrfResponse.data.csrfToken
-      
+
       return axiosInstance.post(`/coupons/api/claim/`, { code }, {
         headers: {
           'X-CSRFToken': csrfToken
         }
       }).then((res) => res.data)
     } catch (error: any) {
-      // CSRF 토큰 가져오기 실패 시에도 에러 반환
-      throw new Error('쿠폰 발급에 실패했습니다: ' + (error.response?.data?.message || error.message))
+      // 더 구체적인 에러 메시지 처리
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.message || '이미 발급받은 쿠폰이거나 유효하지 않은 쿠폰입니다.')
+      } else if (error.response?.status === 401) {
+        throw new Error('로그인이 필요합니다.')
+      } else if (error.response?.status === 429) {
+        throw new Error('쿠폰 발급 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.')
+      } else {
+        throw new Error('쿠폰 발급에 실패했습니다: ' + (error.response?.data?.message || error.message))
+      }
     }
   },
 

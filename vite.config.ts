@@ -21,12 +21,12 @@ export default defineConfig({
     ],
     proxy: {
       '/api': {
-        target: 'http://192.168.0.5:8000',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
       },
       '/ws': {
-        target: 'ws://192.168.0.5:8000',
+        target: 'ws://localhost:8000',
         ws: true,
         changeOrigin: true,
       },

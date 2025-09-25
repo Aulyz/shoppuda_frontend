@@ -170,10 +170,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         )}
 
-        {/* 위시리스트 버튼 */}
+        {/* 위시리스트 버튼 - 모바일 터치 최적화 */}
         <button
           onClick={toggleWishlist}
-          className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-all duration-200"
+          className="absolute top-2 right-2 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
           title={isWished ? '위시리스트에서 제거' : '위시리스트에 추가'}
         >
           {isWished ? (
@@ -183,10 +183,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           )}
         </button>
 
-        {/* 장바구니 버튼 */}
+        {/* 장바구니 버튼 - 모바일에서는 항상 표시, 터치 최적화 */}
         <button
           onClick={addToCart}
-          className="absolute bottom-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-all duration-200 opacity-0 group-hover:opacity-100"
+          className="absolute bottom-2 right-2 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-all duration-200 opacity-0 group-hover:opacity-100 sm:opacity-100 min-w-[44px] min-h-[44px] flex items-center justify-center"
           title="장바구니에 추가"
         >
           <ShoppingBagIcon className="h-5 w-5 text-gray-600 hover:text-blue-600" />
