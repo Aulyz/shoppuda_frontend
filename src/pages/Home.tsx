@@ -127,8 +127,12 @@ const CouponSection = () => {
 
   const handleClaimCoupon = async (e: React.MouseEvent, couponCode: string, couponName: string) => {
     e.preventDefault()
-    
-    if (!isAuthenticated) {
+
+    console.log('쿠폰 클레임 시도:', { isAuthenticated, user, couponCode })
+
+    // 로그인 상태를 더 엄격하게 체크
+    if (!isAuthenticated || !user) {
+      console.log('비로그인 상태 감지 - 로그인 페이지로 리디렉션')
       addToast({
         type: 'warning',
         title: '로그인 필요',
@@ -257,13 +261,19 @@ const CouponSection = () => {
                   <div className={`my-4 w-px ${isOwned ? 'bg-gray-300' : 'bg-gray-200'}`} />
                   <div className="w-32 sm:w-36 flex items-center justify-center">
                     <button
-                      onClick={(e) => !isOwned ? handleClaimCoupon(e, coupon.code, coupon.name) : undefined}
-                      disabled={isLoading || isOwned}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        if (!isOwned) {
+                          handleClaimCoupon(e, coupon.code, coupon.name)
+                        }
+                      }}
+                      disabled={isLoading}
                       className={`inline-flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 text-xs sm:text-sm font-semibold transition-colors duration-200 ${
-                        isOwned 
-                          ? 'border-gray-400 text-gray-500 cursor-default bg-gray-50' 
-                          : isLoading 
-                            ? 'border-orange-400 text-orange-600 opacity-60 cursor-not-allowed' 
+                        isOwned
+                          ? 'border-gray-400 text-gray-500 cursor-default bg-gray-50'
+                          : isLoading
+                            ? 'border-orange-400 text-orange-600 opacity-60 cursor-not-allowed'
                             : 'border-orange-400 text-orange-600 hover:bg-orange-50'
                       }`}
                       aria-label={isOwned ? "수령완료" : "쿠폰 다운로드"}
@@ -706,11 +716,14 @@ const NewItemsSection = () => {
 const SaleBannerSection = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
   const { addToast } = useToastStore()
 
   const handleCouponClick = () => {
-    if (!isAuthenticated) {
+    console.log('배너 쿠폰 클릭:', { isAuthenticated, user })
+
+    if (!isAuthenticated || !user) {
+      console.log('비로그인 상태 감지 - 로그인 페이지로 리디렉션')
       addToast({
         type: 'warning',
         title: '로그인 필요',
