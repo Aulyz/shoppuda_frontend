@@ -17,7 +17,7 @@ export default defineConfig({
     port: 3000,
     host: '0.0.0.0',
     allowedHosts: [
-      '192.168.0.5',
+      'shoppuda.kro.kr',
     ],
     proxy: {
       '/api': {

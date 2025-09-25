@@ -30,7 +30,7 @@ export default function KakaoNameInput() {
 
     try {
       // Django API로 이름 업데이트 요청
-      const response = await fetch('http://192.168.0.5:8000/accounts/kakao/callback/', {
+      const response = await fetch('http://localhost:8000/accounts/kakao/callback/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -78,7 +78,7 @@ function KakaoAuthHandler() {
 
       try {
         console.log('Sending code to backend...');
-        const response = await fetch(`http://192.168.0.5:8000/api/kakao/login/`, {
+        const response = await fetch(`http://localhost:8000/api/kakao/login/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

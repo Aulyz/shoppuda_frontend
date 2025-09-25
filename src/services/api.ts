@@ -2,7 +2,7 @@ import axios from "axios"
 import { useAuthStore } from "../store/authStore"
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://192.168.0.5:8000/api"
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -250,19 +250,19 @@ export const api = {
 
   // 비밀번호 재설정 요청 (인증 코드 발송)
   resetPassword: (data: { email: string }) =>
-    axios.post(`http://192.168.0.5:8000/accounts/api/password-reset/`, data).then((res) => res.data),
+    axios.post(`http://localhost:8000/accounts/api/password-reset/`, data).then((res) => res.data),
   
   // 인증 코드 확인
   verifyResetCode: (data: { email: string; code: string }) =>
-    axios.post(`http://192.168.0.5:8000/accounts/api/password-reset/verify/`, data).then((res) => res.data),
+    axios.post(`http://localhost:8000/accounts/api/password-reset/verify/`, data).then((res) => res.data),
   
   // 비밀번호 재설정 확인 (새 비밀번호 설정)
   resetPasswordConfirm: (data: { uid: string; token: string; new_password: string; confirm_password: string }) =>
-    axios.post(`http://192.168.0.5:8000/accounts/api/password-reset/confirm/`, data).then((res) => res.data),
+    axios.post(`http://localhost:8000/accounts/api/password-reset/confirm/`, data).then((res) => res.data),
   
   // 인증 코드 재발송
   resendVerificationCode: (data: { email: string }) =>
-    axios.post(`http://192.168.0.5:8000/accounts/api/password-reset/resend/`, data).then((res) => res.data),
+    axios.post(`http://localhost:8000/accounts/api/password-reset/resend/`, data).then((res) => res.data),
 
   // Search APIs
   searchProducts: (query: string, params?: any) =>

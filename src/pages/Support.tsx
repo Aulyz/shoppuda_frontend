@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import { ChatWebSocket } from '../services/websocket';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://shoppuda.kro.kr:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 import { 
   ChatBubbleLeftRightIcon, 
   QuestionMarkCircleIcon,

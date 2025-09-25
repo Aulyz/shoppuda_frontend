@@ -164,7 +164,7 @@ const MyPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://192.168.0.5:8000/api/mypage/change-password/', {
+      const response = await fetch('http://localhost:8000/api/mypage/change-password/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -196,8 +196,8 @@ const MyPage: React.FC = () => {
   const handleAddressSubmit = async () => {
     try {
       const url = editingAddress 
-        ? `http://192.168.0.5:8000/api/mypage/shipping-addresses/${editingAddress.id}/`
-        : 'http://192.168.0.5:8000/api/mypage/shipping-addresses/';
+        ? `http://localhost:8000/api/mypage/shipping-addresses/${editingAddress.id}/`
+        : 'http://localhost:8000/api/mypage/shipping-addresses/';
       
       const method = editingAddress ? 'PUT' : 'POST';
       
@@ -235,7 +235,7 @@ const MyPage: React.FC = () => {
     if (!confirm('정말 이 배송지를 삭제하시겠습니까?')) return;
     
     try {
-      const response = await fetch(`http://192.168.0.5:8000/api/mypage/shipping-addresses/${id}/`, {
+      const response = await fetch(`http://localhost:8000/api/mypage/shipping-addresses/${id}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${accessToken}`

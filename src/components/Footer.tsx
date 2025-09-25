@@ -50,7 +50,7 @@ const Footer = () => {
     const fetchSettings = async () => {
       try {
         // site_settings API 직접 호출
-        const response = await axios.get('http://192.168.0.5:8000/api/site/settings/');
+        const response = await axios.get('http://localhost:8000/api/site/settings/');
         setSettings(response.data);
       } catch (error) {
         console.error('Failed to fetch site settings:', error);

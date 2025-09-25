@@ -22,7 +22,7 @@ const NaverLogin: React.FC<NaverLoginProps> = ({ onFailure }) => {
       const state = Math.random().toString(36).substring(2, 15);
       
       // 네이버 리다이렉트 URI에 redirect 파라미터 추가
-      let redirectUri = 'http://192.168.0.5/naver/callback';
+      let redirectUri = 'http://shoppuda.kro.kr/naver/callback';
       if (redirectParam) {
         redirectUri += `?redirect=${encodeURIComponent(redirectParam)}`;
       }

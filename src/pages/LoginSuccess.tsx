@@ -17,7 +17,7 @@ const LoginSuccess = () => {
       if (access && refresh) {
         try {
           // Django에서 사용자 정보 가져오기
-          const userResponse = await fetch('http://192.168.0.5:8000/api/user/profile/', {
+          const userResponse = await fetch('http://localhost:8000/api/user/profile/', {
             headers: {
               'Authorization': `Bearer ${access}`,
             },
